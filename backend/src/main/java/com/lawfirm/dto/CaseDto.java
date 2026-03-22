@@ -1,7 +1,6 @@
 package com.lawfirm.dto;
 
 import java.time.LocalDateTime;
-
 import com.lawfirm.entity.Case;
 
 public class CaseDto {
@@ -16,7 +15,9 @@ public class CaseDto {
     private LocalDateTime nextHearingDate;
     private String courtName;
     private String clientName;
+    private Long   clientId;     // ← NEW: needed for lawyer messaging
     private String lawyerName;
+    private Long   lawyerId;     // ← NEW: for consistency
     private Double feesCharged;
 
     public static CaseDto fromEntity(Case c) {
@@ -32,10 +33,14 @@ public class CaseDto {
         dto.setNextHearingDate(c.getNextHearingDate());
         dto.setCourtName(c.getCourtName());
         dto.setFeesCharged(c.getFeesCharged());
-        if (c.getClient() != null)
+        if (c.getClient() != null) {
+            dto.setClientId(c.getClient().getId());                  // ← NEW
             dto.setClientName(c.getClient().getFirstName() + " " + c.getClient().getLastName());
-        if (c.getAssignedLawyer() != null)
+        }
+        if (c.getAssignedLawyer() != null) {
+            dto.setLawyerId(c.getAssignedLawyer().getId());          // ← NEW
             dto.setLawyerName(c.getAssignedLawyer().getFirstName() + " " + c.getAssignedLawyer().getLastName());
+        }
         return dto;
     }
 
@@ -61,8 +66,12 @@ public class CaseDto {
     public void setCourtName(String courtName) { this.courtName = courtName; }
     public String getClientName() { return clientName; }
     public void setClientName(String clientName) { this.clientName = clientName; }
+    public Long getClientId() { return clientId; }                   // ← NEW
+    public void setClientId(Long clientId) { this.clientId = clientId; } // ← NEW
     public String getLawyerName() { return lawyerName; }
     public void setLawyerName(String lawyerName) { this.lawyerName = lawyerName; }
+    public Long getLawyerId() { return lawyerId; }                   // ← NEW
+    public void setLawyerId(Long lawyerId) { this.lawyerId = lawyerId; } // ← NEW
     public Double getFeesCharged() { return feesCharged; }
     public void setFeesCharged(Double feesCharged) { this.feesCharged = feesCharged; }
 }

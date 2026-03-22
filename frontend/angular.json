@@ -97,7 +97,9 @@
               "src/styles.scss",
               "@angular/material/prebuilt-themes/indigo-pink.css"
             ],
-            "scripts": []
+            "scripts": [
+              "node_modules/sockjs-client/dist/sockjs.js"
+            ]
           }
         }
       }

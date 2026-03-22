@@ -1,0 +1,247 @@
+// src/app/lawyer/clients/lawyer-clients.component.scss
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+$ink:         #0D0C0A;
+$ink-soft:    #1A1916;
+$ink-mid:     #252320;
+$parchment:   #F5F0E8;
+$gold:        #C9A84C;
+$gold-light:  #E2C47A;
+$muted:       #7A7469;
+$muted-light: #ABA49A;
+$green:       #5DCAA5;
+$blue:        #378ADD;
+$red:         #d46060;
+$border:      rgba(201, 168, 76, 0.13);
+$border-soft: rgba(201, 168, 76, 0.07);
+$ease:        cubic-bezier(0.4, 0, 0.2, 1);
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+.clients-page {
+  padding: 26px 30px;
+  font-family: 'DM Sans', sans-serif;
+  color: $parchment;
+  min-height: 100%;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; margin-bottom: 20px;
+}
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 700; color: $parchment; margin: 0 0 4px;
+}
+.page-sub { font-size: 0.8rem; color: $muted; margin: 0; }
+
+// ── Loading / Error / Empty ───────────────────────────────────────────────────
+.state-loading {
+  display: flex; align-items: center; gap: 14px;
+  padding: 48px 0; color: $muted; font-size: 0.85rem;
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $gold !important; }
+}
+.state-error {
+  display: flex; align-items: center; gap: 10px; color: $red;
+  background: rgba(#b83232,.08); border: 1px solid rgba(#b83232,.15);
+  border-radius: 4px; padding: 14px 16px; font-size: 0.85rem;
+}
+.state-empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 60px 0; color: $muted; gap: 12px;
+  mat-icon { font-size: 40px; width: 40px; height: 40px; opacity: .2; }
+  p { font-size: 0.85rem; margin: 0; }
+}
+
+// ── Search bar ────────────────────────────────────────────────────────────────
+.search-bar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: $ink-soft; border: 1px solid $border;
+  border-radius: 3px; padding: 0 12px; flex: 1;
+}
+.search-icon {
+  font-size: 16px !important; width: 16px !important; height: 16px !important;
+  color: $muted; flex-shrink: 0;
+}
+.search-input {
+  background: none; border: none; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: $parchment;
+  flex: 1; padding: 11px 0;
+  &::placeholder { color: $muted; }
+}
+.clear-btn {
+  background: none; border: none; cursor: pointer; color: $muted; padding: 2px;
+  display: flex; align-items: center;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { color: $parchment; }
+}
+.result-count { font-size: 0.73rem; color: $muted; white-space: nowrap; }
+
+// ── Two-column layout ─────────────────────────────────────────────────────────
+.content-columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;
+}
+
+// ── Client list ───────────────────────────────────────────────────────────────
+.list-col { display: flex; flex-direction: column; gap: 8px; }
+
+.client-row {
+  display: flex; align-items: center; gap: 14px;
+  background: $ink-soft; border: 1px solid $border;
+  border-radius: 5px; padding: 14px 16px; cursor: pointer;
+  transition: border-color .2s $ease, background .2s $ease;
+
+  &:hover   { border-color: rgba($gold,.3); background: rgba($gold,.03); .row-arrow { color: $gold; } }
+  &--active { border-color: rgba($gold,.4) !important; background: rgba($gold,.06) !important; }
+}
+
+.client-avatar {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  background: rgba($gold,.1); border: 1px solid rgba($gold,.25);
+  color: $gold; font-size: 0.85rem; font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.client-info { flex: 1; min-width: 0; }
+.client-name  { font-size: 0.87rem; font-weight: 600; color: $parchment; margin-bottom: 2px; }
+.client-email { font-size: 0.72rem; color: $muted; margin-bottom: 5px; }
+.client-meta  {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  font-size: 0.7rem; color: $muted;
+}
+.meta-icon {
+  font-size: 11px !important; width: 11px !important; height: 11px !important;
+  opacity: .6; vertical-align: middle; margin-right: 2px;
+}
+.active-tag {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: .06em;
+  background: rgba($green,.1); color: $green; border: 1px solid rgba($green,.2);
+  border-radius: 2px; padding: 1px 7px;
+}
+
+.row-arrow { color: $muted; font-size: 18px !important; transition: color .2s $ease; }
+
+// ── Detail panel ──────────────────────────────────────────────────────────────
+.detail-panel {
+  background: $ink-soft; border: 1px solid $border;
+  border-radius: 6px; padding: 20px 22px;
+  position: sticky; top: 16px; animation: slideIn .2s $ease both;
+  max-height: calc(100vh - 160px); overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+
+  &--empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 60px 22px; border-style: dashed;
+    border-color: rgba($parchment,.08); color: $muted;
+    mat-icon { font-size: 36px; width: 36px; height: 36px; opacity: .2; }
+    p { font-size: 0.82rem; margin: 0; }
+  }
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+
+.dp-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+}
+.dp-avatar {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  background: rgba($gold,.12); border: 2px solid rgba($gold,.3);
+  color: $gold; font-size: 1.1rem; font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  display: flex; align-items: center; justify-content: center;
+}
+.dp-header-info { flex: 1; min-width: 0; }
+.dp-name  {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem; font-weight: 700; color: $parchment; margin: 0 0 3px;
+}
+.dp-email { font-size: 0.75rem; color: $muted; }
+
+// Action buttons
+.dp-actions { display: flex; gap: 8px; margin-bottom: 14px; }
+.dp-btn {
+  display: flex; align-items: center; gap: 6px;
+  border-radius: 3px; padding: 8px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+  transition: background .2s $ease;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+  &--message {
+    background: rgba($gold,.1); border: 1px solid rgba($gold,.25); color: $gold;
+    &:hover { background: rgba($gold,.2); }
+  }
+}
+
+.dp-divider { height: 1px; background: $border-soft; margin: 12px 0; }
+
+.dp-section-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.62rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: $gold; margin: 0 0 10px;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; opacity: .8; }
+}
+
+.case-count-chip {
+  background: rgba($gold,.12); color: $gold; border: 1px solid rgba($gold,.2);
+  border-radius: 9px; padding: 1px 8px; font-size: 0.6rem; font-weight: 700;
+  margin-left: 4px;
+}
+
+// Contact details grid
+.dp-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.ddg-item { display: flex; flex-direction: column; gap: 2px; }
+.ddg-key  { font-size: 0.6rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: $muted; }
+.ddg-val  { font-size: 0.83rem; font-weight: 500; color: $parchment; word-break: break-all; }
+
+// Cases list in detail panel
+.dp-case-list { display: flex; flex-direction: column; gap: 8px; }
+
+.dp-case-row {
+  display: flex; align-items: center; gap: 10px;
+  background: $ink-mid; border: 1px solid $border-soft;
+  border-radius: 4px; padding: 11px 13px; cursor: pointer;
+  transition: border-color .2s $ease, background .2s $ease;
+  &:hover { border-color: rgba($gold,.25); background: rgba($gold,.03); .dp-row-arrow { color: $gold; } }
+}
+.dp-case-info { flex: 1; min-width: 0; }
+.dp-case-num  { font-size: 0.65rem; font-weight: 700; color: $gold; letter-spacing: .05em; margin-bottom: 2px; }
+.dp-case-title { font-size: 0.82rem; font-weight: 600; color: $parchment; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dp-case-meta { font-size: 0.68rem; color: $muted; }
+.dp-case-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.dp-case-fees  { font-size: 0.7rem; color: $muted-light; }
+.dp-row-arrow  { color: $muted; font-size: 16px !important; transition: color .2s $ease; }
+
+// Case status badges
+.case-badge {
+  font-size: .58rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 2px; flex-shrink: 0;
+  &--open       { background: rgba($green,.1); color: $green;  border: 1px solid rgba($green,.2); }
+  &--progress   { background: rgba($gold,.1);  color: $gold;   border: 1px solid rgba($gold,.2); }
+  &--closed     { background: rgba($muted,.1); color: $muted-light; border: 1px solid rgba($muted,.15); }
+  &--settled    { background: rgba($blue,.1);  color: $blue;   border: 1px solid rgba($blue,.2); }
+  &--dismissed  { background: rgba($red,.1);   color: $red;    border: 1px solid rgba($red,.2); }
+}
+
+// Icon button (close)
+.icon-btn {
+  width: 30px; height: 30px; background: none; border: none; cursor: pointer;
+  color: $muted; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { color: $parchment; background: rgba($parchment,.06); }
+}
+
+.dp-empty-note { font-size: 0.8rem; color: $muted; padding: 8px 0; }
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .content-columns { grid-template-columns: 1fr; }
+  .dp-details-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .clients-page { padding: 16px; }
+  .page-header  { flex-direction: column; }
+}

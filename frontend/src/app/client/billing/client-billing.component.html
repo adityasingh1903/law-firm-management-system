@@ -1,0 +1,274 @@
+<!-- src/app/client/billing/client-billing.component.html -->
+
+<div class="billing-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Billing</h1>
+      <p class="page-sub">Invoices and payment history for all your cases.</p>
+    </div>
+  </div>
+
+  <!-- ── Summary Cards ────────────────────────────────────────────────────── -->
+  <div class="summary-row" *ngIf="!loadingSummary && !errorSummary && summary">
+    <div class="summary-card summary-card--due">
+      <div class="sc-label">Total Amount Due</div>
+      <div class="sc-value">{{ totalDueDisplay }}</div>
+      <div class="sc-sub">
+        {{ summary.unpaidCount }} unpaid · {{ summary.overdueCount }} overdue
+      </div>
+    </div>
+    <div class="summary-card summary-card--paid">
+      <div class="sc-label">Total Paid</div>
+      <div class="sc-value">{{ totalPaidDisplay }}</div>
+      <div class="sc-sub">{{ summary.paidCount }} invoice{{ summary.paidCount !== 1 ? 's' : '' }} cleared</div>
+    </div>
+    <div class="summary-card summary-card--overdue" *ngIf="summary.overdueCount > 0">
+      <div class="sc-label">Overdue</div>
+      <div class="sc-value sc-value--alert">{{ summary.overdueCount }}</div>
+      <div class="sc-sub">invoice{{ summary.overdueCount !== 1 ? 's' : '' }} past due date</div>
+    </div>
+  </div>
+
+  <!-- ── Loading / Error ──────────────────────────────────────────────────── -->
+  <div class="state-loading" *ngIf="loadingInvoices">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    <span>Loading invoices…</span>
+  </div>
+  <div class="state-error" *ngIf="errorInvoices && !loadingInvoices">
+    <mat-icon>error_outline</mat-icon> {{ errorInvoices }}
+  </div>
+
+  <ng-container *ngIf="!loadingInvoices && !errorInvoices">
+
+    <!-- ── Tabs + Filter bar ─────────────────────────────────────────────── -->
+    <div class="controls-row">
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn" [class.active]="activeTab === 'all'"
+                (click)="setTab('all')">
+          All
+          <span class="tab-count">{{ invoices.length }}</span>
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'pending'"
+                (click)="setTab('pending')">
+          Pending
+          <span class="tab-count tab-count--warn">
+            {{ (summary?.unpaidCount ?? 0) + (summary?.overdueCount ?? 0) }}
+          </span>
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'paid'"
+                (click)="setTab('paid')">
+          Paid
+          <span class="tab-count tab-count--muted">{{ summary?.paidCount ?? 0 }}</span>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input class="search-input" type="text" placeholder="Search invoices…"
+               [(ngModel)]="searchKeyword" (ngModelChange)="applyFilters()" />
+        <button class="clear-btn" *ngIf="searchKeyword" (click)="searchKeyword=''; applyFilters()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Status filter -->
+      <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+        <option value="">All Statuses</option>
+        <option *ngFor="let s of allStatuses" [value]="s">{{ statusLabels[s] }}</option>
+      </select>
+
+      <!-- Clear -->
+      <button class="btn-clear" *ngIf="activeFilterCount > 0" (click)="clearFilters()">
+        <mat-icon>filter_alt_off</mat-icon> Clear
+      </button>
+
+      <span class="result-count">{{ filtered.length }} invoice{{ filtered.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- ── Two-column layout ─────────────────────────────────────────────── -->
+    <div class="content-columns">
+
+      <!-- LEFT: invoice list -->
+      <div class="list-col">
+
+        <!-- Empty -->
+        <div class="state-empty" *ngIf="filtered.length === 0">
+          <mat-icon>receipt_long</mat-icon>
+          <p>No invoices found.</p>
+        </div>
+
+        <!-- Invoice rows -->
+        <div class="invoice-list">
+          <div class="invoice-row"
+               *ngFor="let inv of filtered"
+               [class.invoice-row--active]="selected?.id === inv.id"
+               [class.invoice-row--overdue]="inv.overdue"
+               (click)="openDetail(inv)">
+
+            <!-- Left: number + type -->
+            <div class="inv-left">
+              <div class="inv-number">{{ inv.invoiceNumber }}</div>
+              <div class="inv-type-chip">{{ typeLabel(inv.invoiceType) }}</div>
+            </div>
+
+            <!-- Middle: info -->
+            <div class="inv-body">
+              <div class="inv-title-row">
+                <span class="inv-title">{{ inv.title }}</span>
+                <span class="inv-badge" [ngClass]="statusClass(inv)">
+                  {{ statusLabel(inv.status) }}
+                </span>
+              </div>
+              <div class="inv-case">
+                <mat-icon class="meta-icon">gavel</mat-icon>
+                {{ inv.caseTitle }}
+                <span class="case-num" *ngIf="inv.caseNumber">&nbsp;#{{ inv.caseNumber }}</span>
+              </div>
+              <div class="inv-meta-row">
+                <span class="inv-amount">{{ formatCurrency(inv.totalAmount) }}</span>
+                <span class="inv-meta-sep">·</span>
+                <span class="inv-due" [class.inv-due--warn]="isDueSoon(inv.dueDate)"
+                      [class.inv-due--overdue]="inv.overdue" *ngIf="inv.dueDate">
+                  <mat-icon class="meta-icon">event</mat-icon>
+                  Due {{ formatDate(inv.dueDate) }}
+                </span>
+              </div>
+
+              <!-- Progress bar for partial payments -->
+              <div class="inv-progress" *ngIf="inv.status === 'PARTIALLY_PAID'">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="progressPercent(inv)"></div>
+                </div>
+                <span class="progress-label">
+                  {{ formatCurrency(inv.paidAmount) }} of {{ formatCurrency(inv.totalAmount) }} paid
+                </span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <mat-icon class="row-arrow">chevron_right</mat-icon>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: detail panel -->
+      <div class="detail-panel" *ngIf="selected">
+
+        <!-- Header -->
+        <div class="dp-header">
+          <div class="dp-header-left">
+            <div class="dp-inv-number">{{ selected.invoiceNumber }}</div>
+            <h2 class="dp-title">{{ selected.title }}</h2>
+            <span class="inv-badge inv-badge--lg" [ngClass]="statusClass(selected)">
+              {{ statusLabel(selected.status) }}
+            </span>
+          </div>
+          <button class="icon-btn" (click)="closeDetail()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Amount block -->
+        <div class="dp-amount-block">
+          <div class="dp-amount-item">
+            <span class="dp-amount-label">Invoice Amount</span>
+            <span class="dp-amount-value">{{ formatCurrency(selected.amount) }}</span>
+          </div>
+          <div class="dp-amount-item" *ngIf="selected.taxAmount && selected.taxAmount > 0">
+            <span class="dp-amount-label">Tax</span>
+            <span class="dp-amount-value">{{ formatCurrency(selected.taxAmount) }}</span>
+          </div>
+          <div class="dp-amount-item dp-amount-item--total">
+            <span class="dp-amount-label">Total</span>
+            <span class="dp-amount-value dp-amount-total">{{ formatCurrency(selected.totalAmount) }}</span>
+          </div>
+          <div class="dp-amount-item" *ngIf="selected.paidAmount > 0">
+            <span class="dp-amount-label">Paid</span>
+            <span class="dp-amount-value dp-amount-paid">{{ formatCurrency(selected.paidAmount) }}</span>
+          </div>
+          <div class="dp-amount-item dp-amount-item--due" *ngIf="selected.balanceDue > 0">
+            <span class="dp-amount-label">Balance Due</span>
+            <span class="dp-amount-value dp-amount-due">{{ formatCurrency(selected.balanceDue) }}</span>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="dp-progress" *ngIf="selected.status === 'PARTIALLY_PAID'">
+          <div class="progress-bar progress-bar--lg">
+            <div class="progress-fill" [style.width.%]="progressPercent(selected)"></div>
+          </div>
+          <span class="progress-label">{{ progressPercent(selected) }}% paid</span>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Meta grid -->
+        <div class="dp-meta-grid">
+          <div class="dp-meta-item">
+            <span class="dp-meta-label"><mat-icon>label</mat-icon> Type</span>
+            <span class="dp-meta-value">{{ typeLabel(selected.invoiceType) }}</span>
+          </div>
+          <div class="dp-meta-item" *ngIf="selected.dueDate">
+            <span class="dp-meta-label"><mat-icon>event</mat-icon> Due Date</span>
+            <span class="dp-meta-value" [class.text-overdue]="selected.overdue">
+              {{ formatDate(selected.dueDate) }}
+            </span>
+          </div>
+          <div class="dp-meta-item" *ngIf="selected.paidDate">
+            <span class="dp-meta-label"><mat-icon>check_circle</mat-icon> Paid On</span>
+            <span class="dp-meta-value">{{ formatDate(selected.paidDate) }}</span>
+          </div>
+          <div class="dp-meta-item" *ngIf="selected.paymentMethod">
+            <span class="dp-meta-label"><mat-icon>payments</mat-icon> Method</span>
+            <span class="dp-meta-value">{{ selected.paymentMethod }}</span>
+          </div>
+          <div class="dp-meta-item" *ngIf="selected.paymentReference">
+            <span class="dp-meta-label"><mat-icon>tag</mat-icon> Reference</span>
+            <span class="dp-meta-value">{{ selected.paymentReference }}</span>
+          </div>
+          <div class="dp-meta-item">
+            <span class="dp-meta-label"><mat-icon>gavel</mat-icon> Case</span>
+            <span class="dp-meta-value">{{ selected.caseTitle }}</span>
+          </div>
+          <div class="dp-meta-item" *ngIf="selected.lawyerName">
+            <span class="dp-meta-label"><mat-icon>person</mat-icon> Lawyer</span>
+            <span class="dp-meta-value">{{ selected.lawyerName }}</span>
+          </div>
+          <div class="dp-meta-item">
+            <span class="dp-meta-label"><mat-icon>calendar_today</mat-icon> Issued</span>
+            <span class="dp-meta-value">{{ formatDate(selected.createdAt) }}</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <ng-container *ngIf="selected.description">
+          <div class="dp-section-label"><mat-icon>notes</mat-icon> Description</div>
+          <div class="dp-text-block">{{ selected.description }}</div>
+        </ng-container>
+
+        <!-- Notes -->
+        <ng-container *ngIf="selected.notes">
+          <div class="dp-section-label"><mat-icon>sticky_note_2</mat-icon> Notes</div>
+          <div class="dp-text-block dp-text-block--notes">{{ selected.notes }}</div>
+        </ng-container>
+
+      </div>
+
+      <!-- Right placeholder -->
+      <div class="detail-panel detail-panel--empty"
+           *ngIf="!selected && filtered.length > 0">
+        <mat-icon>receipt_long</mat-icon>
+        <p>Select an invoice to view details</p>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

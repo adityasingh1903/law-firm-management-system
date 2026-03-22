@@ -62,6 +62,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/cases/public/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+
+                // ── WebSocket endpoints — must be permitted before JWT filter ──
+                .requestMatchers("/ws/**").permitAll()          // SockJS handshake
+                .requestMatchers("/ws/info/**").permitAll()     // SockJS info endpoint
+                .requestMatchers("/topic/**").permitAll()       // STOMP broker topics
+                .requestMatchers("/app/**").permitAll()         // STOMP app destinations
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/lawyer/**").hasRole("LAWYER")
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
@@ -76,10 +84,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200", "http://localhost:63371", "http://localhost:8080"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:4200",
+            "http://localhost:63371",
+            "http://localhost:8080"
+        ));
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true);   // required for WebSocket + SockJS
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

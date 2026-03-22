@@ -1,21 +1,37 @@
-import { User } from './user.model';
+// src/app/shared/models/message.model.ts
 
-export interface Message {
+export interface MessageDto {
   id: number;
   content: string;
-  type: 'TEXT' | 'FILE' | 'IMAGE' | 'SYSTEM';
+  type: MessageType;
   isRead: boolean;
   createdAt: string;
-  sender: User;
-  receiver: User;
-  caseEntityId: number;
-  attachmentUrl?: string;
+  senderId: number;
+  senderName: string;
+  receiverId: number;
+  receiverName: string;
+  caseId: number;
+  attachmentUrl: string | null;
+}
+
+export interface ConversationSummary {
+  caseId: number;
+  caseTitle: string;
+  caseNumber: string;
+  lawyerName: string;
+  lastMessage: string;
+  lastMessageType: MessageType;
+  lastMessageAt: string;
+  lastMessageIsFromMe: boolean;
+  unreadCount: number;
 }
 
 export interface SendMessageRequest {
-  content: string;
+  caseId: number;
   receiverId: number;
-  caseId?: number;
-  type?: 'TEXT' | 'FILE' | 'IMAGE';
+  content: string;
+  type?: string;
   attachmentUrl?: string;
 }
+
+export type MessageType = 'TEXT' | 'FILE' | 'IMAGE' | 'SYSTEM';

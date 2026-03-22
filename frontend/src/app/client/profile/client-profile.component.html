@@ -1,0 +1,292 @@
+<!-- src/app/client/profile/client-profile.component.html -->
+
+<div class="profile-page">
+
+  <!-- Loading -->
+  <div class="state-loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    <span>Loading profile…</span>
+  </div>
+
+  <!-- Error -->
+  <div class="state-error" *ngIf="error && !loading">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+  </div>
+
+  <ng-container *ngIf="!loading && !error && profile">
+
+    <!-- ── Profile Hero ────────────────────────────────────────────────────── -->
+    <div class="profile-hero">
+      <div class="hero-avatar">{{ initials }}</div>
+      <div class="hero-info">
+        <h1 class="hero-name">{{ fullName }}</h1>
+        <div class="hero-meta">
+          <span class="hero-username">{{ '@' + profile.username }}</span>
+          <span class="hero-sep">·</span>
+          <span class="hero-since">{{ memberSince }}</span>
+          <span class="hero-sep">·</span>
+          <span class="hero-status" [class.status--active]="profile.status === 'ACTIVE'">
+            {{ profile.status | titlecase }}
+          </span>
+        </div>
+        <div class="hero-email">
+          <mat-icon class="meta-icon">email</mat-icon>
+          {{ profile.email }}
+        </div>
+      </div>
+      <button class="btn-edit-hero" (click)="startEdit(); activeSection = 'info'"
+              *ngIf="!editMode">
+        <mat-icon>edit</mat-icon>
+        Edit Profile
+      </button>
+    </div>
+
+    <!-- Success banner -->
+    <div class="success-banner" *ngIf="saveSuccess || pwSuccess">
+      <mat-icon>check_circle</mat-icon>
+      {{ saveSuccess || pwSuccess }}
+    </div>
+
+    <!-- ── Section tabs ────────────────────────────────────────────────────── -->
+    <div class="section-tabs">
+      <button class="section-tab" [class.active]="activeSection === 'info'"
+              (click)="activeSection = 'info'; editMode = false">
+        <mat-icon>person</mat-icon> Personal Info
+      </button>
+      <button class="section-tab" [class.active]="activeSection === 'security'"
+              (click)="activeSection = 'security'">
+        <mat-icon>lock</mat-icon> Security
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PERSONAL INFO SECTION
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div class="section-body" *ngIf="activeSection === 'info'">
+
+      <!-- View mode -->
+      <ng-container *ngIf="!editMode">
+        <div class="info-grid">
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>badge</mat-icon> First Name</div>
+            <div class="ic-value">{{ profile.firstName }}</div>
+          </div>
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>badge</mat-icon> Last Name</div>
+            <div class="ic-value">{{ profile.lastName }}</div>
+          </div>
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>email</mat-icon> Email Address</div>
+            <div class="ic-value">{{ profile.email }}</div>
+          </div>
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>phone</mat-icon> Phone Number</div>
+            <div class="ic-value">{{ profile.phoneNumber || '—' }}</div>
+          </div>
+
+          <div class="info-card info-card--full">
+            <div class="ic-label"><mat-icon>location_on</mat-icon> Address</div>
+            <div class="ic-value">{{ profile.address || '—' }}</div>
+          </div>
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>person</mat-icon> Username</div>
+            <div class="ic-value ic-value--muted">{{ profile.username }}</div>
+          </div>
+
+          <div class="info-card">
+            <div class="ic-label"><mat-icon>verified_user</mat-icon> Account Status</div>
+            <div class="ic-value">
+              <span class="status-pill" [class.status-pill--active]="profile.status === 'ACTIVE'">
+                {{ profile.status | titlecase }}
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="info-actions">
+          <button class="btn-primary" (click)="startEdit()">
+            <mat-icon>edit</mat-icon> Edit Information
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Edit mode -->
+      <ng-container *ngIf="editMode">
+
+        <div class="save-error" *ngIf="saveError">
+          <mat-icon>error_outline</mat-icon> {{ saveError }}
+        </div>
+
+        <div class="edit-form">
+
+          <div class="form-row form-row--half">
+            <div class="form-field">
+              <label class="form-label">First Name <span class="req">*</span></label>
+              <input class="form-input" type="text" [(ngModel)]="editForm.firstName"
+                     placeholder="First name" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Last Name <span class="req">*</span></label>
+              <input class="form-input" type="text" [(ngModel)]="editForm.lastName"
+                     placeholder="Last name" />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Email Address <span class="req">*</span></label>
+            <input class="form-input" type="email" [(ngModel)]="editForm.email"
+                   placeholder="Email address" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Phone Number</label>
+            <input class="form-input" type="tel" [(ngModel)]="editForm.phoneNumber"
+                   placeholder="+91 98765 43210" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Address</label>
+            <textarea class="form-input form-textarea" [(ngModel)]="editForm.address"
+                      placeholder="Full address" rows="3"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+            <button class="btn-primary" (click)="saveProfile()" [disabled]="saving">
+              <mat-progress-spinner *ngIf="saving" mode="indeterminate" diameter="16"></mat-progress-spinner>
+              <mat-icon *ngIf="!saving">save</mat-icon>
+              {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+          </div>
+
+        </div>
+      </ng-container>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECURITY SECTION
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div class="section-body" *ngIf="activeSection === 'security'">
+
+      <div class="security-card">
+        <div class="security-card-header">
+          <div class="sc-title">
+            <mat-icon>lock</mat-icon> Change Password
+          </div>
+          <p class="sc-desc">Use a strong password with at least 6 characters, mixing letters, numbers and symbols.</p>
+        </div>
+
+        <div class="pw-error" *ngIf="pwError">
+          <mat-icon>error_outline</mat-icon> {{ pwError }}
+        </div>
+
+        <!-- Current password -->
+        <div class="form-field">
+          <label class="form-label">Current Password <span class="req">*</span></label>
+          <div class="pw-input-wrap">
+            <input class="form-input" [type]="showCurrent ? 'text' : 'password'"
+                   [(ngModel)]="pwForm.currentPassword" placeholder="Enter current password" />
+            <button class="pw-toggle" (click)="showCurrent = !showCurrent">
+              <mat-icon>{{ showCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- New password -->
+        <div class="form-field">
+          <label class="form-label">New Password <span class="req">*</span></label>
+          <div class="pw-input-wrap">
+            <input class="form-input" [type]="showNew ? 'text' : 'password'"
+                   [(ngModel)]="pwForm.newPassword" placeholder="At least 6 characters" />
+            <button class="pw-toggle" (click)="showNew = !showNew">
+              <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+
+          <!-- Strength meter -->
+          <div class="pw-strength" *ngIf="pwForm.newPassword">
+            <div class="strength-bar">
+              <div class="strength-fill"
+                   [class.strength-1]="passwordStrength.level === 1"
+                   [class.strength-2]="passwordStrength.level === 2"
+                   [class.strength-3]="passwordStrength.level === 3"
+                   [class.strength-4]="passwordStrength.level === 4"
+                   [style.width.%]="passwordStrength.level * 25">
+              </div>
+            </div>
+            <span class="strength-label"
+                  [class.strength-label--weak]="passwordStrength.level <= 1"
+                  [class.strength-label--fair]="passwordStrength.level === 2"
+                  [class.strength-label--good]="passwordStrength.level >= 3">
+              {{ passwordStrength.label }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Confirm password -->
+        <div class="form-field">
+          <label class="form-label">Confirm New Password <span class="req">*</span></label>
+          <div class="pw-input-wrap">
+            <input class="form-input"
+                   [type]="showConfirm ? 'text' : 'password'"
+                   [(ngModel)]="pwForm.confirmPassword"
+                   placeholder="Re-enter new password"
+                   [class.input--match]="pwForm.confirmPassword && pwForm.newPassword === pwForm.confirmPassword"
+                   [class.input--mismatch]="pwForm.confirmPassword && pwForm.newPassword !== pwForm.confirmPassword" />
+            <button class="pw-toggle" (click)="showConfirm = !showConfirm">
+              <mat-icon>{{ showConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          <span class="match-hint" *ngIf="pwForm.confirmPassword">
+            <mat-icon *ngIf="pwForm.newPassword === pwForm.confirmPassword" class="match-ok">check_circle</mat-icon>
+            <mat-icon *ngIf="pwForm.newPassword !== pwForm.confirmPassword" class="match-err">cancel</mat-icon>
+            {{ pwForm.newPassword === pwForm.confirmPassword ? 'Passwords match' : 'Passwords do not match' }}
+          </span>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" (click)="submitPasswordChange()" [disabled]="pwSaving">
+            <mat-progress-spinner *ngIf="pwSaving" mode="indeterminate" diameter="16"></mat-progress-spinner>
+            <mat-icon *ngIf="!pwSaving">lock_reset</mat-icon>
+            {{ pwSaving ? 'Updating…' : 'Update Password' }}
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Account info (read-only, bottom of security tab) -->
+      <div class="account-info-card">
+        <div class="aic-label"><mat-icon>info</mat-icon> Account Information</div>
+        <div class="aic-row">
+          <span class="aic-key">Username</span>
+          <span class="aic-val">{{ profile.username }}</span>
+        </div>
+        <div class="aic-row">
+          <span class="aic-key">Account Status</span>
+          <span class="aic-val">
+            <span class="status-pill" [class.status-pill--active]="profile.status === 'ACTIVE'">
+              {{ profile.status | titlecase }}
+            </span>
+          </span>
+        </div>
+        <div class="aic-row">
+          <span class="aic-key">Member Since</span>
+          <span class="aic-val">{{ memberSince }}</span>
+        </div>
+        <div class="aic-row">
+          <span class="aic-key">Role</span>
+          <span class="aic-val">Client</span>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
+</div>

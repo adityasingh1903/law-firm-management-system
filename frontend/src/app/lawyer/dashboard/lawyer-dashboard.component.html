@@ -1,37 +1,320 @@
-<div class="lawyer-dashboard">
-  <h1 class="dashboard-title">Lawyer Dashboard</h1>
-  
-  <div class="stats-cards">
-    <mat-card class="stat-card">
-      <mat-card-header>
-        <mat-card-title>My Cases</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="stat-number">0</div>
-      </mat-card-content>
-    </mat-card>
+<!-- src/app/lawyer/dashboard/lawyer-dashboard.component.html -->
 
-    <mat-card class="stat-card">
-      <mat-card-header>
-        <mat-card-title>Pending Tasks</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="stat-number">0</div>
-      </mat-card-content>
-    </mat-card>
+<div class="dashboard-page">
 
-    <mat-card class="stat-card">
-      <mat-card-header>
-        <mat-card-title>Messages</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="stat-number">0</div>
-      </mat-card-content>
-    </mat-card>
+  <!-- Loading -->
+  <div class="state-loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    <span>Loading dashboard…</span>
   </div>
 
-  <div class="welcome-message">
-    <h2>Welcome to Lawyer Dashboard</h2>
-    <p>Manage your cases, communicate with clients, and track your legal work from here.</p>
+  <!-- Error -->
+  <div class="state-error" *ngIf="error && !loading">
+    <mat-icon>error_outline</mat-icon> {{ error }}
   </div>
+
+  <ng-container *ngIf="!loading && !error && dashboard">
+
+    <!-- ── Hero Greeting ─────────────────────────────────────────────────── -->
+    <div class="page-hero">
+      <div class="hero-left">
+        <div class="hero-avatar">{{ userInitials }}</div>
+        <div>
+          <h1 class="hero-greeting">{{ greeting }}, {{ userName.split(' ')[0] }}.</h1>
+          <p class="hero-sub">Here's your practice overview for today.</p>
+        </div>
+      </div>
+      <!-- Today's hearing alert -->
+      <div class="today-alert" *ngIf="dashboard.todayHearings > 0" (click)="goToHearings()">
+        <mat-icon>gavel</mat-icon>
+        <div>
+          <div class="today-alert-num">{{ dashboard.todayHearings }}</div>
+          <div class="today-alert-lbl">hearing{{ dashboard.todayHearings !== 1 ? 's' : '' }} today</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stats Row ─────────────────────────────────────────────────────── -->
+    <div class="stats-row">
+
+      <div class="stat-card stat-card--cases" (click)="goToCases()">
+        <div class="stat-icon">
+          <mat-icon>folder_open</mat-icon>
+        </div>
+        <div class="stat-body">
+          <div class="stat-num">{{ dashboard.totalCases }}</div>
+          <div class="stat-label">Total Cases</div>
+          <div class="stat-breakdown">
+            <span class="bd--open">{{ dashboard.openCases }} open</span>
+            <span class="bd-sep">·</span>
+            <span class="bd--progress">{{ dashboard.inProgressCases }} in progress</span>
+            <span class="bd-sep">·</span>
+            <span class="bd--closed">{{ dashboard.closedCases }} closed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--hearings" (click)="goToHearings()">
+        <div class="stat-icon">
+          <mat-icon>event</mat-icon>
+        </div>
+        <div class="stat-body">
+          <div class="stat-num">{{ dashboard.upcomingHearings }}</div>
+          <div class="stat-label">Upcoming Hearings</div>
+          <div class="stat-sub" *ngIf="dashboard.todayHearings > 0">
+            {{ dashboard.todayHearings }} scheduled today
+          </div>
+          <div class="stat-sub" *ngIf="dashboard.todayHearings === 0">
+            None today
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--messages" (click)="goToMessages()">
+        <div class="stat-icon">
+          <mat-icon>chat</mat-icon>
+        </div>
+        <div class="stat-body">
+          <div class="stat-num">{{ dashboard.unreadMessages }}</div>
+          <div class="stat-label">Unread Messages</div>
+          <div class="stat-sub">From clients</div>
+        </div>
+        <div class="stat-badge" *ngIf="dashboard.unreadMessages > 0">
+          {{ dashboard.unreadMessages > 9 ? '9+' : dashboard.unreadMessages }}
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--billing" (click)="goToBilling()">
+        <div class="stat-icon">
+          <mat-icon>receipt_long</mat-icon>
+        </div>
+        <div class="stat-body">
+          <div class="stat-num stat-num--sm">{{ formatCurrency(dashboard.totalFeesCharged) }}</div>
+          <div class="stat-label">Total Fees Charged</div>
+          <div class="stat-sub" *ngIf="dashboard.pendingInvoices > 0">
+            {{ dashboard.pendingInvoices }} invoice{{ dashboard.pendingInvoices !== 1 ? 's' : '' }} pending
+          </div>
+          <div class="stat-sub" *ngIf="dashboard.pendingInvoices === 0">All invoices cleared</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Main grid ─────────────────────────────────────────────────────── -->
+    <div class="main-grid">
+
+      <!-- LEFT column -->
+      <div class="main-col-left">
+
+        <!-- Upcoming Hearings -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <mat-icon>event</mat-icon> Upcoming Hearings
+            </div>
+            <button class="section-link" (click)="goToHearings()">View all</button>
+          </div>
+
+          <div class="section-empty" *ngIf="dashboard.upcomingHearingsList.length === 0">
+            <mat-icon>event_busy</mat-icon>
+            <p>No upcoming hearings</p>
+          </div>
+
+          <div class="hearing-list">
+            <div class="hearing-row"
+                 *ngFor="let h of dashboard.upcomingHearingsList">
+
+              <div class="hr-date">
+                <span class="hr-day">{{ getDay(h.hearingDate) }}</span>
+                <span class="hr-mon">{{ getMonth(h.hearingDate) }}</span>
+              </div>
+
+              <div class="hr-body">
+                <div class="hr-title">{{ h.title }}</div>
+                <div class="hr-case">{{ h.caseTitle }}</div>
+                <div class="hr-meta">
+                  <mat-icon class="meta-icon">schedule</mat-icon> {{ getTime(h.hearingDate) }}
+                  <span *ngIf="h.courtName">
+                    <mat-icon class="meta-icon">location_on</mat-icon> {{ h.courtName }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="hr-right">
+                <span class="days-badge" [class.days-badge--soon]="daysUntil(h.hearingDate) <= 3">
+                  {{ daysUntil(h.hearingDate) === 0 ? 'Today'
+                   : daysUntil(h.hearingDate) === 1 ? 'Tomorrow'
+                   : daysUntil(h.hearingDate) + 'd' }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Cases -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <mat-icon>folder</mat-icon> Recent Cases
+            </div>
+            <button class="section-link" (click)="goToCases()">View all</button>
+          </div>
+
+          <div class="section-empty" *ngIf="dashboard.recentCases.length === 0">
+            <mat-icon>folder_open</mat-icon>
+            <p>No cases assigned yet</p>
+          </div>
+
+          <div class="case-list">
+            <div class="case-row"
+                 *ngFor="let c of dashboard.recentCases"
+                 (click)="openCase(c.id)">
+
+              <div class="case-row-left">
+                <div class="case-num">#{{ c.caseNumber }}</div>
+                <div class="case-title">{{ c.title }}</div>
+                <div class="case-meta">
+                  <mat-icon class="meta-icon">person</mat-icon>
+                  {{ c.clientName || 'No client' }}
+                  <span *ngIf="c.courtName">
+                    <mat-icon class="meta-icon">location_on</mat-icon> {{ c.courtName }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="case-row-right">
+                <span class="case-badge" [ngClass]="statusClass(c.status)">
+                  {{ statusLabel(c.status) }}
+                </span>
+                <div class="case-fees" *ngIf="c.feesCharged">
+                  {{ formatCurrency(c.feesCharged) }}
+                </div>
+              </div>
+
+              <mat-icon class="row-arrow">chevron_right</mat-icon>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT column -->
+      <div class="main-col-right">
+
+        <!-- Recent Messages -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <mat-icon>chat</mat-icon> Recent Messages
+              <span class="unread-badge" *ngIf="dashboard.unreadMessages > 0">
+                {{ dashboard.unreadMessages }}
+              </span>
+            </div>
+            <button class="section-link" (click)="goToMessages()">View all</button>
+          </div>
+
+          <div class="section-empty" *ngIf="dashboard.recentMessages.length === 0">
+            <mat-icon>forum</mat-icon>
+            <p>No conversations yet</p>
+          </div>
+
+          <div class="msg-list">
+            <div class="msg-row"
+                 *ngFor="let m of dashboard.recentMessages"
+                 [class.msg-row--unread]="m.unreadCount > 0"
+                 (click)="openConversation(m.caseId)">
+
+              <div class="msg-avatar">{{ getInitials(m.lawyerName) }}</div>
+
+              <div class="msg-body">
+                <div class="msg-name-row">
+                  <span class="msg-name">{{ m.lawyerName }}</span>
+                  <span class="msg-time">{{ formatRelative(m.lastMessageAt) }}</span>
+                </div>
+                <div class="msg-case">{{ m.caseTitle }}</div>
+                <div class="msg-preview">
+                  <span class="preview-you" *ngIf="m.lastMessageIsFromMe">You: </span>
+                  {{ m.lastMessage }}
+                </div>
+              </div>
+
+              <div class="msg-unread-dot" *ngIf="m.unreadCount > 0">
+                {{ m.unreadCount > 9 ? '9+' : m.unreadCount }}
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title"><mat-icon>bolt</mat-icon> Quick Actions</div>
+          </div>
+          <div class="quick-actions">
+            <button class="qa-btn" (click)="goToCases()">
+              <mat-icon>folder_open</mat-icon>
+              <span>View Cases</span>
+            </button>
+            <button class="qa-btn" (click)="goToHearings()">
+              <mat-icon>event</mat-icon>
+              <span>Hearings</span>
+            </button>
+            <button class="qa-btn" (click)="goToMessages()">
+              <mat-icon>chat</mat-icon>
+              <span>Messages</span>
+            </button>
+            <button class="qa-btn" (click)="goToBilling()">
+              <mat-icon>receipt_long</mat-icon>
+              <span>Billing</span>
+            </button>
+            <button class="qa-btn" (click)="goToDocuments()">
+              <mat-icon>folder</mat-icon>
+              <span>Documents</span>
+            </button>
+            <button class="qa-btn" (click)="goToClients()">
+              <mat-icon>people</mat-icon>
+              <span>Clients</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Case status breakdown -->
+        <div class="section-card" *ngIf="dashboard.totalCases > 0">
+          <div class="section-header">
+            <div class="section-title"><mat-icon>pie_chart</mat-icon> Case Breakdown</div>
+          </div>
+          <div class="breakdown-list">
+            <div class="breakdown-row">
+              <span class="bd-label">Open</span>
+              <div class="bd-bar-wrap">
+                <div class="bd-bar bd-bar--open"
+                     [style.width.%]="(dashboard.openCases / dashboard.totalCases) * 100"></div>
+              </div>
+              <span class="bd-count">{{ dashboard.openCases }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="bd-label">In Progress</span>
+              <div class="bd-bar-wrap">
+                <div class="bd-bar bd-bar--progress"
+                     [style.width.%]="(dashboard.inProgressCases / dashboard.totalCases) * 100"></div>
+              </div>
+              <span class="bd-count">{{ dashboard.inProgressCases }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="bd-label">Closed</span>
+              <div class="bd-bar-wrap">
+                <div class="bd-bar bd-bar--closed"
+                     [style.width.%]="(dashboard.closedCases / dashboard.totalCases) * 100"></div>
+              </div>
+              <span class="bd-count">{{ dashboard.closedCases }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </ng-container>
 </div>

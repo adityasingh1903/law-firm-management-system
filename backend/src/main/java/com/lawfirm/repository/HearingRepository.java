@@ -13,70 +13,104 @@ import java.util.Optional;
 @Repository
 public interface HearingRepository extends JpaRepository<Hearing, Long> {
 
-    /** All hearings for a specific case, ascending */
+    // ── Existing client queries ───────────────────────────────────────────────
     List<Hearing> findByCaseEntityIdOrderByHearingDateAsc(Long caseId);
 
-    /**
-     * All hearings across ALL cases belonging to a client (by username).
-     * Case.client is a User; User.username = principal.getName()
-     */
     @Query("""
-        SELECT h FROM Hearing h
-        JOIN FETCH h.caseEntity c
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
         WHERE c.client.username = :username
         ORDER BY h.hearingDate ASC
     """)
     List<Hearing> findAllByClientUsername(@Param("username") String username);
 
-    /**
-     * Upcoming SCHEDULED hearings for a client.
-     */
     @Query("""
-        SELECT h FROM Hearing h
-        JOIN FETCH h.caseEntity c
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
         WHERE c.client.username = :username
-          AND h.hearingDate >= :now
-          AND h.status = 'SCHEDULED'
+          AND h.hearingDate >= :now AND h.status = 'SCHEDULED'
         ORDER BY h.hearingDate ASC
     """)
     List<Hearing> findUpcomingByClientUsername(@Param("username") String username,
                                                @Param("now") LocalDateTime now);
 
-    /**
-     * Past hearings for a client.
-     */
     @Query("""
-        SELECT h FROM Hearing h
-        JOIN FETCH h.caseEntity c
-        WHERE c.client.username = :username
-          AND h.hearingDate < :now
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.client.username = :username AND h.hearingDate < :now
         ORDER BY h.hearingDate DESC
     """)
     List<Hearing> findPastByClientUsername(@Param("username") String username,
                                            @Param("now") LocalDateTime now);
 
-    /**
-     * Hearings for one specific case, verifying ownership by username.
-     */
     @Query("""
-        SELECT h FROM Hearing h
-        JOIN FETCH h.caseEntity c
-        WHERE c.id = :caseId
-          AND c.client.username = :username
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.id = :caseId AND c.client.username = :username
         ORDER BY h.hearingDate ASC
     """)
     List<Hearing> findByCaseIdAndClientUsername(@Param("caseId") Long caseId,
                                                 @Param("username") String username);
 
-    /**
-     * Single hearing detail with ownership check.
-     */
     @Query("""
-        SELECT h FROM Hearing h
-        JOIN FETCH h.caseEntity c
-        WHERE h.id = :hearingId
-          AND c.client.username = :username
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE h.id = :hearingId AND c.client.username = :username
     """)
     Optional<Hearing> findByIdAndClientUsername(@Param("hearingId") Long hearingId,
+                                                @Param("username") String username);
+
+    // ── Lawyer queries (NEW) ──────────────────────────────────────────────────
+
+    /** All hearings for cases assigned to this lawyer */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.assignedLawyer.username = :username
+        ORDER BY h.hearingDate ASC
+    """)
+    List<Hearing> findAllByLawyerUsername(@Param("username") String username);
+
+    /** Upcoming scheduled hearings for lawyer */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.assignedLawyer.username = :username
+          AND h.hearingDate >= :now AND h.status = 'SCHEDULED'
+        ORDER BY h.hearingDate ASC
+    """)
+    List<Hearing> findUpcomingByLawyerUsername(@Param("username") String username,
+                                               @Param("now") LocalDateTime now);
+
+    /** Past hearings for lawyer */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.assignedLawyer.username = :username
+          AND h.hearingDate < :now
+        ORDER BY h.hearingDate DESC
+    """)
+    List<Hearing> findPastByLawyerUsername(@Param("username") String username,
+                                           @Param("now") LocalDateTime now);
+
+    /** Today's hearings for lawyer */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.assignedLawyer.username = :username
+          AND h.hearingDate >= :startOfDay
+          AND h.hearingDate < :endOfDay
+        ORDER BY h.hearingDate ASC
+    """)
+    List<Hearing> findTodayByLawyerUsername(@Param("username") String username,
+                                            @Param("startOfDay") LocalDateTime startOfDay,
+                                            @Param("endOfDay") LocalDateTime endOfDay);
+
+    /** Hearings for a specific case with lawyer ownership check */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE c.id = :caseId AND c.assignedLawyer.username = :username
+        ORDER BY h.hearingDate ASC
+    """)
+    List<Hearing> findByCaseIdAndLawyerUsername(@Param("caseId") Long caseId,
+                                                @Param("username") String username);
+
+    /** Single hearing with lawyer ownership check */
+    @Query("""
+        SELECT h FROM Hearing h JOIN FETCH h.caseEntity c
+        WHERE h.id = :hearingId AND c.assignedLawyer.username = :username
+    """)
+    Optional<Hearing> findByIdAndLawyerUsername(@Param("hearingId") Long hearingId,
                                                 @Param("username") String username);
 }

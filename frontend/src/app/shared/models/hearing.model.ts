@@ -1,25 +1,25 @@
 // src/app/shared/models/hearing.model.ts
 
 export interface HearingDto {
-  id: number;
-  title: string;
+  id:          number;
+  title:       string;
   description: string | null;
-  hearingDate: string;        // ISO string e.g. "2026-03-24T10:30:00"
-  courtName: string | null;
-  courtRoom: string | null;
-  judgeName: string | null;
-  status: HearingStatus;
-  notes: string | null;
-  caseId: number;
-  caseNumber: string;
-  caseTitle: string;
+  hearingDate: string;        // ISO datetime string
+  courtName:   string | null;
+  courtRoom:   string | null;
+  judgeName:   string | null;
+  status:      HearingStatus;
+  notes:       string | null;
+  caseId:      number | null;
+  caseNumber:  string | null;
+  caseTitle:   string | null;
 }
 
 export interface GroupedHearingsDto {
-  upcoming: HearingDto[];
-  past: HearingDto[];
+  upcoming:      HearingDto[];
+  past:          HearingDto[];
   totalUpcoming: number;
-  totalPast: number;
+  totalPast:     number;
 }
 
 export type HearingStatus = 'SCHEDULED' | 'COMPLETED' | 'POSTPONED' | 'CANCELLED';

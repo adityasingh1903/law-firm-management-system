@@ -1,271 +1,428 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// LexFirma — Client Messages
-// ─────────────────────────────────────────────────────────────────────────────
+// src/app/client/messages/client-messages.component.scss
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-$ink:        #0D0C0A; $ink-soft:  #1A1916; $ink-mid: #252320; $ink-lift: #2E2C28;
-$parchment:  #F5F0E8; $gold:      #C9A84C; $gold-light: #E2C47A;
-$muted:      #7A7469; $muted-light: #ABA49A;
-$border:     rgba(201,168,76,.13); $border-soft: rgba(201,168,76,.07);
-$ease: cubic-bezier(.4,0,.2,1); $ease-out: cubic-bezier(0,0,.2,1);
+$ink:         #0D0C0A;
+$ink-soft:    #1A1916;
+$ink-mid:     #252320;
+$parchment:   #F5F0E8;
+$gold:        #C9A84C;
+$gold-light:  #E2C47A;
+$muted:       #7A7469;
+$muted-light: #ABA49A;
+$border:      rgba(201, 168, 76, 0.13);
+$border-soft: rgba(201, 168, 76, 0.07);
+$ease:        cubic-bezier(0.4, 0, 0.2, 1);
 
-*, *::before, *::after { box-sizing: border-box; }
+// ── Full-height layout ────────────────────────────────────────────────────────
+.messages-page {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - 60px);   // subtract topbar height
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+  background: $ink;
+}
 
-.messages-wrapper {
-  height: calc(100vh - 60px); /* fill content-area below topbar */
+// ══════════════════════════════════════════════════════════════════════════════
+// Left — conversation list
+// ══════════════════════════════════════════════════════════════════════════════
+.conv-panel {
   display: flex; flex-direction: column;
-  background: $ink; color: $parchment;
-  font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased;
-  padding: 2rem 2rem 0;
+  background: $ink-soft;
+  border-right: 1px solid $border;
+  overflow: hidden;
 }
 
-.overline {
-  display: block; font-size: .68rem; font-weight: 600;
-  letter-spacing: .2em; text-transform: uppercase; color: $gold; margin-bottom: .5rem; opacity: .8;
+.conv-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid $border-soft;
+  flex-shrink: 0;
 }
 
-.dash-header {
-  flex-shrink: 0; padding-bottom: 1.5rem; border-bottom: 1px solid $border-soft; margin-bottom: 1.5rem;
-  h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 700; line-height: 1.1;
-    color: $parchment; margin: 0 0 .3rem;
-    em { font-style: italic; color: $gold; }
-  }
-  .dash-subtitle { font-size: .875rem; color: $muted; margin: 0; }
+.conv-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem; font-weight: 700; color: $parchment; margin: 0;
 }
 
-// ── Two-column layout ─────────────────────────────────────────────────────────
-.messages-layout {
-  flex: 1; display: grid; grid-template-columns: 280px 1fr;
-  gap: 0; overflow: hidden;
-  border: 1px solid $border; border-radius: 6px;
-  margin-bottom: 2rem;
+.conv-unread-badge {
+  background: $gold; color: $ink;
+  font-size: 0.62rem; font-weight: 700;
+  min-width: 20px; height: 20px; border-radius: 10px;
+  padding: 0 6px; display: flex; align-items: center; justify-content: center;
 }
 
-// ── Case list (left) ──────────────────────────────────────────────────────────
-.case-list-panel {
-  background: $ink-soft; border-right: 1px solid $border;
-  display: flex; flex-direction: column; overflow: hidden;
+// ── Loading / error / empty (small variants) ──────────────────────────────────
+.state-loading {
+  display: flex; justify-content: center; padding: 24px;
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $gold !important; }
+}
+.state-error-sm {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: #d46060; padding: 12px 16px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+.state-empty-sm {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 16px; color: $muted; gap: 8px;
+  mat-icon { font-size: 32px; width: 32px; height: 32px; opacity: .25; }
+  p { font-size: 0.82rem; margin: 0; }
 }
 
-.case-list-head {
-  padding: 1rem 1.25rem; border-bottom: 1px solid $border-soft; flex-shrink: 0;
-}
-
-.section-label {
-  font-size: .65rem; font-weight: 600; letter-spacing: .18em;
-  text-transform: uppercase; color: $muted;
-}
-
-.case-list {
+// ── Conversation rows ─────────────────────────────────────────────────────────
+.conv-list {
   flex: 1; overflow-y: auto;
-  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($gold,.15) transparent;
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-thumb { background: rgba($gold,.15); border-radius: 2px; }
 }
 
-.no-cases {
-  padding: 2rem 1.25rem; text-align: center;
-  font-style: italic; font-size: .875rem; color: $muted;
+.conv-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; cursor: pointer; position: relative;
+  border-bottom: 1px solid $border-soft;
+  transition: background .18s $ease;
+
+  &:hover    { background: rgba($parchment,.04); }
+  &--active  { background: rgba($gold,.07) !important; }
+  &--unread  .conv-lawyer { color: $parchment; font-weight: 600; }
 }
 
-.case-list-item {
-  width: 100%; background: none; border: none; border-bottom: 1px solid $border-soft;
-  padding: 1rem 1.25rem; text-align: left; cursor: pointer;
-  transition: background .15s $ease;
-
-  &:hover { background: rgba($gold,.05); }
-  &.active { background: rgba($gold,.1); border-left: 2px solid $gold; }
-  &:last-child { border-bottom: none; }
-}
-
-.cli-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .3rem; }
-
-.cli-num {
-  font-family: 'Cormorant Garamond', serif; font-size: .9rem; font-weight: 700;
-  color: $gold; letter-spacing: .04em;
-}
-
-.cli-badge {
-  background: $gold; color: $ink; font-size: .58rem; font-weight: 700;
-  min-width: 18px; height: 18px; border-radius: 9px; padding: 0 .3rem;
+.conv-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: rgba($gold,.12); border: 1px solid rgba($gold,.25);
+  color: $gold; font-size: 0.72rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 
-.cli-title {
-  font-size: .83rem; font-weight: 600; color: $parchment; line-height: 1.3; margin-bottom: .25rem;
+.conv-info { flex: 1; min-width: 0; }
+.conv-name-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; margin-bottom: 2px;
+}
+.conv-lawyer { font-size: 0.83rem; font-weight: 500; color: $muted-light; }
+.conv-time   { font-size: 0.65rem; color: $muted; flex-shrink: 0; }
+.conv-case   { font-size: 0.7rem; color: $muted; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-preview {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.73rem; color: $muted;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.preview-me   { color: $muted-light; flex-shrink: 0; }
+.preview-icon { mat-icon { font-size: 12px; width: 12px; height: 12px; } }
+.preview-text { overflow: hidden; text-overflow: ellipsis; }
 
-.cli-lawyer {
-  display: flex; align-items: center; gap: .35rem;
-  font-size: .72rem; color: $muted;
+.conv-unread-dot {
+  background: $gold; color: $ink;
+  font-size: 0.58rem; font-weight: 700;
+  min-width: 18px; height: 18px; border-radius: 9px;
+  padding: 0 4px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
 }
 
-.cli-no-lawyer { font-size: .72rem; color: rgba($muted,.6); font-style: italic; }
-
-// ── Chat panel (right) ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Right — chat panel
+// ══════════════════════════════════════════════════════════════════════════════
 .chat-panel {
-  display: flex; flex-direction: column; overflow: hidden; background: $ink;
+  display: flex; flex-direction: column;
+  background: $ink; overflow: hidden;
 }
 
+// Empty state (no conversation selected)
 .chat-empty {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1.25rem; color: rgba($muted,.5);
-  svg { opacity: .25; }
-  p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; text-align: center; color: $muted; max-width: 280px; margin: 0; }
-  strong { color: $parchment; }
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; color: $muted;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: .2; }
+  p { font-size: 0.85rem; margin: 0; }
 }
 
 // ── Chat header ───────────────────────────────────────────────────────────────
 .chat-header {
-  display: flex; align-items: center; gap: 1rem;
-  padding: 1rem 1.5rem; border-bottom: 1px solid $border; flex-shrink: 0;
-  background: $ink-soft;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  background: $ink-soft; border-bottom: 1px solid $border;
+  flex-shrink: 0;
 }
-
 .chat-header-avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: rgba($gold,.15); border: 1px solid rgba($gold,.25);
-  color: $gold; font-family: 'Cormorant Garamond', serif;
-  font-size: 1.2rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-
-.chat-header-info { flex: 1; min-width: 0; }
-
-.chat-header-name {
-  font-weight: 600; font-size: .9rem; color: $parchment; line-height: 1.2;
-}
-
-.chat-header-case {
-  font-size: .72rem; color: $muted; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-.chat-header-status {
-  display: flex; align-items: center; gap: .4rem;
-  font-size: .72rem; font-weight: 500; color: $muted; flex-shrink: 0;
-}
-
-.online-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #4EB87A;
-  box-shadow: 0 0 6px rgba(#4EB87A,.5);
-}
-
-// ── Messages scroll area ──────────────────────────────────────────────────────
-.chat-messages {
-  flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem;
-  display: flex; flex-direction: column; gap: .25rem;
-  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
-  &::-webkit-scrollbar { width: 3px; }
-  &::-webkit-scrollbar-thumb { background: rgba($gold,.15); border-radius: 2px; }
-}
-
-.chat-loading {
-  display: flex; justify-content: center; padding: 2rem;
-}
-
-.no-messages {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  p { font-family: 'Cormorant Garamond', serif; font-style: italic; color: $muted; font-size: .95rem; }
-}
-
-// ── Date separator ────────────────────────────────────────────────────────────
-.date-separator {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: rgba($gold,.12); border: 1px solid rgba($gold,.25);
+  color: $gold; font-size: 0.7rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  margin: 1rem 0; position: relative;
+}
+.chat-header-name { font-size: 0.87rem; font-weight: 600; color: $parchment; }
+.chat-header-case { font-size: 0.72rem; color: $muted; margin-top: 1px; }
+.case-num         { color: $muted; opacity: .7; }
 
-  &::before {
-    content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px;
-    background: $border-soft;
-  }
+// Thread loading / error
+.thread-loading { display: flex; justify-content: center; padding: 24px;
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $gold !important; }
+}
+.thread-error { padding: 12px 20px; }
 
-  span {
-    position: relative; background: $ink; padding: 0 .875rem;
-    font-size: .68rem; font-weight: 500; letter-spacing: .08em;
-    text-transform: uppercase; color: $muted;
-  }
+// ── Scrollable message area ───────────────────────────────────────────────────
+.chat-body {
+  flex: 1; overflow-y: auto; padding: 20px 20px 8px;
+  display: flex; flex-direction: column; gap: 4px;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba($gold,.12) transparent;
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: rgba($gold,.12); border-radius: 2px; }
 }
 
-// ── Message bubbles ───────────────────────────────────────────────────────────
+.thread-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; color: $muted;
+  mat-icon { font-size: 32px; width: 32px; height: 32px; opacity: .2; }
+  p { font-size: 0.82rem; margin: 0; }
+}
+
+// ── Date divider ──────────────────────────────────────────────────────────────
+.date-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0 8px;
+}
+.date-divider::before,
+.date-divider::after {
+  content: ''; flex: 1; height: 1px; background: $border-soft;
+}
+.date-divider-label {
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: $muted; white-space: nowrap;
+  padding: 0 8px;
+}
+
+// ── Message rows ──────────────────────────────────────────────────────────────
 .msg-row {
-  display: flex; margin-bottom: .25rem;
-  &--mine { justify-content: flex-end; }
+  display: flex; align-items: flex-end; gap: 8px;
+  margin-bottom: 4px;
+
+  &--mine   { flex-direction: row-reverse; }
+  &--theirs { flex-direction: row; }
 }
+
+.msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: rgba($gold,.1); border: 1px solid rgba($gold,.2);
+  color: $gold; font-size: 0.62rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;   // align with meta row
+}
+
+.msg-bubble-wrap { max-width: 68%; display: flex; flex-direction: column; }
+
+.msg-row--mine   .msg-bubble-wrap { align-items: flex-end; }
+.msg-row--theirs .msg-bubble-wrap { align-items: flex-start; }
 
 .msg-bubble {
-  max-width: 72%; background: $ink-soft; border: 1px solid $border-soft;
-  border-radius: 12px 12px 12px 2px; padding: .75rem 1rem;
-  animation: bubbleIn .15s $ease-out both;
+  padding: 10px 14px;
+  border-radius: 12px;
+  word-break: break-word;
+  line-height: 1.55;
 
-  &--mine {
-    background: rgba($gold,.12); border-color: rgba($gold,.2);
-    border-radius: 12px 12px 2px 12px;
+  .msg-row--mine   & {
+    background: rgba($gold,.15);
+    border: 1px solid rgba($gold,.25);
+    border-bottom-right-radius: 3px;
+  }
+  .msg-row--theirs & {
+    background: $ink-soft;
+    border: 1px solid $border-soft;
+    border-bottom-left-radius: 3px;
   }
 }
 
-.msg-content {
-  font-size: .875rem; color: $parchment; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+.msg-text {
+  font-size: 0.84rem; color: $parchment; margin: 0; white-space: pre-wrap;
+}
+
+.msg-attachment {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; margin-bottom: 4px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; color: $gold; }
+  a { color: $gold; text-decoration: none; &:hover { text-decoration: underline; } }
 }
 
 .msg-meta {
-  display: flex; align-items: center; gap: .35rem; justify-content: flex-end;
-  margin-top: .375rem;
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 3px; padding: 0 2px;
 }
-
-.msg-time { font-size: .65rem; color: $muted; }
-
-.msg-read svg, .msg-read .read-icon { color: $gold; }
-.msg-read .sent-icon { color: $muted; }
+.msg-time {
+  font-size: 0.62rem; color: $muted;
+}
+.msg-read-icon {
+  font-size: 13px !important; width: 13px !important; height: 13px !important;
+  color: $muted; opacity: .7;
+}
 
 // ── Compose area ──────────────────────────────────────────────────────────────
-.chat-compose {
-  display: flex; align-items: flex-end; gap: .75rem;
-  padding: 1rem 1.5rem; border-top: 1px solid $border; flex-shrink: 0;
+.compose-area {
+  flex-shrink: 0;
+  border-top: 1px solid $border-soft;
   background: $ink-soft;
+  padding: 12px 16px;
 }
 
-.compose-input-wrap { flex: 1; }
+.compose-error {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; color: #d46060; margin-bottom: 8px;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+.compose-box {
+  display: flex; align-items: flex-end; gap: 10px;
+}
 
 .compose-input {
-  width: 100%; background: $ink-mid;
-  border: 1px solid rgba($parchment,.1); border-radius: 6px;
-  padding: .75rem 1rem; color: $parchment;
-  font-family: 'DM Sans', sans-serif; font-size: .9rem;
-  resize: none; max-height: 120px; overflow-y: auto; line-height: 1.5;
+  flex: 1; resize: none; max-height: 120px;
+  background: $ink-mid; border: 1px solid $border;
+  border-radius: 8px; padding: 11px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: $parchment;
+  outline: none; line-height: 1.5;
   transition: border-color .2s $ease;
+  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+
   &::placeholder { color: $muted; }
-  &:focus { outline: none; border-color: $gold; }
+  &:focus         { border-color: rgba($gold,.35); }
+  &:disabled      { opacity: .5; }
 }
 
-.compose-send {
-  width: 42px; height: 42px; border-radius: 6px; flex-shrink: 0;
-  background: $gold; color: $ink; border: none; cursor: pointer;
+.send-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: $gold; border: none; cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   transition: background .2s $ease, transform .15s $ease;
-  &:hover:not(:disabled) { background: $gold-light; transform: translateY(-1px); }
-  &:disabled { opacity: .4; cursor: not-allowed; }
+
+  mat-icon { color: $ink; font-size: 18px; width: 18px; height: 18px; }
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $ink !important; }
+
+  &:hover:not(:disabled) { background: $gold-light; transform: scale(1.05); }
+  &:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 }
-
-// ── Spinners ──────────────────────────────────────────────────────────────────
-.spinner-ring {
-  border-radius: 50%; border: 2px solid rgba($parchment,.1); border-top-color: $gold;
-  animation: spin .7s linear infinite;
-  width: 22px; height: 22px; display: inline-block;
-  &--sm { width: 16px; height: 16px; border-top-color: $ink; }
-}
-
-.loading-state { display: flex; justify-content: center; padding: 2rem; }
-
-@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
-@keyframes spin   { to { transform: rotate(360deg); } }
-@keyframes bubbleIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
-  .messages-wrapper { padding: 1.25rem 1rem 0; }
-  .messages-layout  { grid-template-columns: 1fr; }
-  .case-list-panel  { display: none; }   // Use a back-button flow on mobile
+  .messages-page { grid-template-columns: 1fr; }
+  .conv-panel { display: none; }
+  .conv-panel.mobile-show { display: flex; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPEND these rules to BOTH:
+//   client-messages.component.scss
+//   lawyer-messages.component.scss
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Conv header actions (pencil + badge together) ─────────────────────────────
+.conv-header-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.btn-new-conv {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.25);
+  color: #C9A84C; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .18s ease;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { background: rgba(#C9A84C,.2); }
+}
+
+// ── "Start a conversation" button (empty state) ───────────────────────────────
+.btn-start-first {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.25);
+  border-radius: 3px; padding: 8px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #C9A84C;
+  margin-top: 4px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { background: rgba(#C9A84C,.18); }
+}
+
+// ── Chat empty: Message button ────────────────────────────────────────────────
+.btn-empty-new {
+  display: flex; align-items: center; gap: 7px;
+  background: #C9A84C; color: #0D0C0A; border: none;
+  border-radius: 3px; padding: 10px 20px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600;
+  margin-top: 8px; transition: background .18s ease;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover { background: #E2C47A; }
+}
+
+// ── New conversation panel (right side) ───────────────────────────────────────
+.new-conv-panel {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: #0D0C0A; padding: 32px;
+}
+
+.ncp-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  max-width: 380px; width: 100%; text-align: center;
+}
+
+.ncp-icon {
+  font-size: 48px !important; width: 48px !important; height: 48px !important;
+  color: #C9A84C; opacity: .5;
+}
+
+.ncp-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem; font-weight: 700; color: #F5F0E8; margin: 0;
+}
+
+.ncp-sub {
+  font-size: 0.82rem; color: #7A7469; margin: 0;
+}
+
+.ncp-select {
+  width: 100%; background: #252320; border: 1px solid rgba(#C9A84C,.2);
+  border-radius: 4px; padding: 12px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: #F5F0E8;
+  outline: none; cursor: pointer;
+  option { background: #252320; }
+  &:focus { border-color: rgba(#C9A84C,.4); }
+}
+
+.ncp-actions {
+  display: flex; gap: 10px; width: 100%;
+}
+
+.btn-ncp-cancel {
+  flex: 1; background: none; border: 1px solid rgba(#F5F0E8,.12);
+  border-radius: 3px; padding: 10px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: #7A7469;
+  &:hover { color: #F5F0E8; border-color: rgba(#F5F0E8,.25); }
+}
+
+.btn-ncp-go {
+  flex: 2; display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: #C9A84C; border: none; border-radius: 3px; padding: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600;
+  color: #0D0C0A; cursor: pointer;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #E2C47A; }
+}
+
+// ── Thread empty hint ─────────────────────────────────────────────────────────
+.thread-empty-hint {
+  font-size: 0.72rem; color: #7A7469;
+}
+
+// ── Header unread (lawyer only) ───────────────────────────────────────────────
+.header-unread {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.72rem; font-weight: 600; color: #C9A84C;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.2);
+  border-radius: 3px; padding: 4px 10px; flex-shrink: 0;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+// ── Conv case icon ────────────────────────────────────────────────────────────
+.conv-case-icon {
+  font-size: 11px !important; width: 11px !important; height: 11px !important;
+  opacity: .5; flex-shrink: 0;
 }

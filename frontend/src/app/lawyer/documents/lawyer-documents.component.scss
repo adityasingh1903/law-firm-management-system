@@ -1,0 +1,266 @@
+// src/app/lawyer/documents/lawyer-documents.component.scss
+// Same as client SCSS + lawyer review styles
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+$ink:         #0D0C0A;
+$ink-soft:    #1A1916;
+$ink-mid:     #252320;
+$parchment:   #F5F0E8;
+$gold:        #C9A84C;
+$gold-light:  #E2C47A;
+$muted:       #7A7469;
+$muted-light: #ABA49A;
+$green:       #5DCAA5;
+$blue:        #378ADD;
+$red:         #d46060;
+$orange:      #e0924a;
+$border:      rgba(201, 168, 76, 0.13);
+$border-soft: rgba(201, 168, 76, 0.07);
+$ease:        cubic-bezier(0.4, 0, 0.2, 1);
+
+.docs-page { padding: 26px 30px; font-family: 'DM Sans', sans-serif; color: $parchment; min-height: 100%; }
+
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 22px; }
+.header-left { display: flex; align-items: flex-start; gap: 14px; }
+
+.btn-back { width: 34px; height: 34px; background: rgba($parchment,.05); border: 1px solid rgba($parchment,.1); border-radius: 3px; color: $muted-light; cursor: pointer; flex-shrink: 0; margin-top: 6px; display: flex; align-items: center; justify-content: center; transition: background .2s $ease, color .2s $ease; mat-icon { font-size: 18px; width: 18px; height: 18px; } &:hover { background: rgba($gold,.1); color: $gold; border-color: rgba($gold,.2); } }
+
+.breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: $muted; margin-bottom: 4px; }
+.bc-root { cursor: pointer; &:hover { color: $gold; } }
+.bc-sep { font-size: 14px; width: 14px; height: 14px; opacity: .5; }
+.bc-current { color: $gold; font-weight: 600; }
+
+.page-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: $parchment; margin: 0 0 4px; }
+.page-sub { font-size: 0.8rem; color: $muted; margin: 0; }
+.pending-note { color: $orange; }
+
+.btn-upload { display: flex; align-items: center; gap: 6px; background: $gold; color: $ink; border: none; border-radius: 3px; padding: 10px 18px; cursor: pointer; flex-shrink: 0; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; transition: background .2s $ease; mat-icon { font-size: 17px; width: 17px; height: 17px; } &:hover { background: $gold-light; } }
+
+.review-alert { display: flex; align-items: center; gap: 7px; background: rgba($orange,.1); border: 1px solid rgba($orange,.25); border-radius: 3px; padding: 8px 14px; font-size: 0.78rem; font-weight: 600; color: $orange; flex-shrink: 0; mat-icon { font-size: 16px; width: 16px; height: 16px; } }
+
+.state-loading { display: flex; align-items: center; gap: 14px; padding: 48px 0; color: $muted; font-size: 0.85rem; ::ng-deep .mat-mdc-progress-spinner circle { stroke: $gold !important; } }
+.state-error { display: flex; align-items: center; gap: 10px; color: $red; background: rgba(#b83232,.08); border: 1px solid rgba(#b83232,.15); border-radius: 4px; padding: 14px 16px; font-size: 0.85rem; }
+.state-empty { display: flex; flex-direction: column; align-items: center; padding: 60px 0; color: $muted; gap: 12px; mat-icon { font-size: 40px; width: 40px; height: 40px; opacity: .25; } p { font-size: 0.85rem; margin: 0; } }
+
+// ── Case cards ────────────────────────────────────────────────────────────────
+.case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+
+.case-card {
+  background: $ink-soft; border: 1px solid $border; border-radius: 6px; padding: 18px 20px; cursor: pointer;
+  transition: border-color .2s $ease, background .2s $ease, transform .15s $ease;
+  &:hover { border-color: rgba($gold,.35); background: rgba($gold,.04); transform: translateY(-2px); .case-card-arrow { color: $gold; } }
+  &--needs-review { border-left: 3px solid rgba($orange,.5); }
+}
+.case-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.case-card-num { font-size: 0.68rem; font-weight: 700; letter-spacing: .07em; color: $gold; background: rgba($gold,.1); border: 1px solid rgba($gold,.2); border-radius: 2px; padding: 2px 8px; }
+.review-pill { font-size: 0.6rem; font-weight: 700; background: rgba($orange,.12); color: $orange; border: 1px solid rgba($orange,.25); border-radius: 2px; padding: 2px 8px; margin-left: auto; }
+.case-card-arrow { color: $muted; font-size: 20px !important; transition: color .2s $ease; margin-left: auto; }
+.case-card-title { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 700; color: $parchment; margin-bottom: 14px; line-height: 1.3; }
+.case-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.case-doc-count { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: $muted-light; mat-icon { font-size: 14px; width: 14px; height: 14px; opacity: .6; } }
+.status-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.sp { font-size: 0.6rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; &--approved { background: rgba($green,.1); color: $green; border: 1px solid rgba($green,.2); } &--rejected { background: rgba($red,.1); color: $red; border: 1px solid rgba($red,.2); } &--pending { background: rgba($gold,.1); color: $gold; border: 1px solid rgba($gold,.2); } }
+
+// ── Upload panel ──────────────────────────────────────────────────────────────
+.upload-panel { background: $ink-soft; border: 1px solid rgba($gold,.25); border-radius: 6px; padding: 18px 20px; margin-bottom: 18px; animation: fadeIn .2s $ease both; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+.upload-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.upload-panel-title { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 600; color: $gold; mat-icon { font-size: 16px; width: 16px; height: 16px; } }
+.upload-success { display: flex; align-items: center; gap: 8px; background: rgba($green,.08); border: 1px solid rgba($green,.2); color: $green; border-radius: 4px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 12px; }
+.upload-error   { display: flex; align-items: center; gap: 8px; background: rgba(#b83232,.08); border: 1px solid rgba(#b83232,.2); color: $red; border-radius: 4px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 12px; }
+.upload-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+.form-row { display: flex; flex-direction: column; gap: 5px; }
+.form-row:last-child, .form-row:nth-child(4) { grid-column: 1 / -1; }
+.form-label { font-size: 0.65rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: $muted; }
+.req { color: $red; }
+.form-input { background: $ink-mid; border: 1px solid $border; border-radius: 3px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: $parchment; outline: none; transition: border-color .2s $ease; &:focus { border-color: rgba($gold,.4); } &::placeholder { color: $muted; } option { background: $ink-mid; } }
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-select { cursor: pointer; }
+.file-drop-zone { display: flex; align-items: center; gap: 10px; background: $ink-mid; border: 1px dashed rgba($gold,.25); border-radius: 4px; padding: 14px 16px; cursor: pointer; font-size: 0.8rem; color: $muted; transition: border-color .2s $ease; mat-icon { color: $gold; flex-shrink: 0; } &:hover { border-color: rgba($gold,.4); } }
+.file-selected { color: $parchment; font-weight: 500; }
+.form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.btn-cancel { background: none; border: 1px solid rgba($parchment,.12); border-radius: 3px; padding: 9px 18px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; color: $muted; cursor: pointer; &:hover { color: $parchment; border-color: rgba($parchment,.25); } }
+.btn-submit { display: flex; align-items: center; gap: 7px; background: $gold; color: $ink; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; border: none; border-radius: 3px; padding: 9px 20px; cursor: pointer; mat-icon { font-size: 16px; width: 16px; height: 16px; } &:disabled { opacity: .65; cursor: not-allowed; } &:hover:not(:disabled) { background: $gold-light; } }
+
+// ── Filter bar ────────────────────────────────────────────────────────────────
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.search-wrap { display: flex; align-items: center; gap: 8px; background: $ink-soft; border: 1px solid $border; border-radius: 3px; padding: 0 12px; flex: 1; min-width: 200px; }
+.search-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; color: $muted; flex-shrink: 0; }
+.search-input { background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: $parchment; flex: 1; padding: 10px 0; &::placeholder { color: $muted; } }
+.clear-btn { background: none; border: none; cursor: pointer; color: $muted; padding: 2px; display: flex; align-items: center; mat-icon { font-size: 15px; width: 15px; height: 15px; } &:hover { color: $parchment; } }
+.filter-select { background: $ink-soft; border: 1px solid $border; border-radius: 3px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; color: $muted-light; cursor: pointer; outline: none; option { background: $ink-mid; } }
+.btn-clear-filters { display: flex; align-items: center; gap: 5px; background: rgba($gold,.08); border: 1px solid rgba($gold,.15); border-radius: 3px; padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 600; color: $gold; cursor: pointer; mat-icon { font-size: 14px; width: 14px; height: 14px; } &:hover { background: rgba($gold,.14); } }
+.doc-count-label { font-size: 0.73rem; color: $muted; margin-left: auto; white-space: nowrap; }
+
+.content-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+
+.doc-list { display: flex; flex-direction: column; gap: 8px; }
+.doc-row { display: flex; align-items: center; gap: 12px; background: $ink-soft; border: 1px solid $border; border-radius: 5px; padding: 14px 16px; cursor: pointer; transition: border-color .2s $ease, background .2s $ease; &:hover { border-color: rgba($gold,.3); background: rgba($gold,.03); .row-arrow { color: $gold; } } &--active { border-color: rgba($gold,.4) !important; background: rgba($gold,.06) !important; } &--needs-review { border-left: 3px solid rgba($orange,.4); } }
+
+.file-icon { width: 38px; height: 38px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; mat-icon { font-size: 20px; width: 20px; height: 20px; } &.icon--pdf { background: rgba(#b83232,.12); color: $red; border: 1px solid rgba(#b83232,.2); } &.icon--doc { background: rgba($blue,.1); color: $blue; border: 1px solid rgba($blue,.2); } &.icon--xls { background: rgba($green,.1); color: $green; border: 1px solid rgba($green,.2); } &.icon--img { background: rgba($gold,.1); color: $gold; border: 1px solid rgba($gold,.2); } &.icon--file { background: rgba($parchment,.06); color: $muted-light; border: 1px solid $border-soft; } }
+
+.doc-info { flex: 1; min-width: 0; }
+.doc-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+.doc-title { font-size: 0.87rem; font-weight: 600; color: $parchment; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-filename { font-size: 0.72rem; color: $muted; margin-bottom: 5px; }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.7rem; color: $muted; align-items: center; }
+.meta-icon { font-size: 11px !important; width: 11px !important; height: 11px !important; vertical-align: middle; margin-right: 2px; opacity: .65; }
+.doc-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.row-arrow { color: $muted; font-size: 20px !important; transition: color .2s $ease; }
+
+.doc-badge { font-size: 0.58rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; &--lg { font-size: 0.63rem; padding: 4px 10px; } &--uploaded { background: rgba($orange,.1); color: $orange; border: 1px solid rgba($orange,.2); } &--pending { background: rgba($blue,.1); color: $blue; border: 1px solid rgba($blue,.2); } &--approved { background: rgba($green,.1); color: $green; border: 1px solid rgba($green,.2); } &--rejected { background: rgba($red,.1); color: $red; border: 1px solid rgba($red,.2); } &--archived { background: rgba($muted,.1); color: $muted-light; border: 1px solid rgba($muted,.15); } }
+
+.detail-panel { background: $ink-soft; border: 1px solid $border; border-radius: 6px; padding: 20px 22px; position: sticky; top: 16px; animation: slideIn .2s $ease both; max-height: calc(100vh - 160px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent; &--empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 22px; border-style: dashed; border-color: rgba($parchment,.08); color: $muted; mat-icon { font-size: 32px; width: 32px; height: 32px; opacity: .25; } p { font-size: 0.82rem; margin: 0; } } }
+@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+
+.dp-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.dp-file-icon { width: 46px; height: 46px; border-radius: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; mat-icon { font-size: 24px; width: 24px; height: 24px; } @extend .file-icon; }
+.dp-header-info { flex: 1; min-width: 0; }
+.dp-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700; color: $parchment; margin: 0 0 3px; }
+.dp-filename { font-size: 0.72rem; color: $muted; margin-bottom: 8px; }
+
+// Lawyer action row
+.dp-action-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.dp-action-btn { display: flex; align-items: center; gap: 5px; background: rgba($parchment,.05); border: 1px solid $border-soft; border-radius: 3px; padding: 7px 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: $muted-light; transition: background .2s $ease, color .2s $ease; mat-icon { font-size: 14px; width: 14px; height: 14px; } &:disabled { opacity: .5; cursor: not-allowed; } &:hover:not(:disabled) { background: rgba($gold,.08); color: $gold; border-color: rgba($gold,.2); } &--danger { color: rgba($red,.7); &:hover { background: rgba($red,.08); color: $red; border-color: rgba($red,.2); } } }
+
+.inline-editor { background: $ink-mid; border: 1px solid $border; border-radius: 4px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; animation: fadeIn .15s $ease; }
+.form-row-inline { display: flex; flex-direction: column; gap: 5px; }
+.form-textarea-sm { resize: vertical; min-height: 60px; }
+.editor-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-cancel-sm { background: none; border: 1px solid rgba($parchment,.12); border-radius: 3px; padding: 6px 14px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: $muted; cursor: pointer; &:hover { color: $parchment; } }
+.btn-save-sm { display: flex; align-items: center; gap: 6px; background: $gold; border: none; border-radius: 3px; padding: 6px 16px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; color: $ink; cursor: pointer; ::ng-deep .mat-mdc-progress-spinner circle { stroke: $ink !important; } &:disabled { opacity: .6; cursor: not-allowed; } &:hover:not(:disabled) { background: $gold-light; } }
+
+.dp-divider { height: 1px; background: $border-soft; margin: 12px 0; }
+.dp-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.dp-meta-item { display: flex; flex-direction: column; gap: 3px; }
+.dp-meta-label { display: flex; align-items: center; gap: 4px; font-size: 0.6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: $muted; mat-icon { font-size: 12px; width: 12px; height: 12px; opacity: .7; } }
+.dp-meta-value { font-size: 0.83rem; font-weight: 500; color: $parchment; }
+.dp-section-label { display: flex; align-items: center; gap: 6px; font-size: 0.62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: $gold; margin: 14px 0 8px; mat-icon { font-size: 14px; width: 14px; height: 14px; opacity: .8; } }
+.dp-description { font-size: 0.83rem; color: $muted-light; line-height: 1.7; white-space: pre-wrap; background: $ink-mid; border-left: 2px solid rgba($gold,.35); border-radius: 0 4px 4px 0; padding: 12px 14px; }
+.dp-footer { margin-top: 18px; padding-top: 14px; border-top: 1px solid $border-soft; }
+.btn-download-full { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: rgba($gold,.1); border: 1px solid rgba($gold,.25); border-radius: 4px; padding: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600; color: $gold; transition: background .2s $ease; mat-icon { font-size: 17px; width: 17px; height: 17px; } &:hover:not(:disabled) { background: rgba($gold,.18); } &:disabled { opacity: .6; cursor: not-allowed; } }
+
+.icon-btn { width: 30px; height: 30px; background: none; border: none; cursor: pointer; color: $muted; border-radius: 3px; display: flex; align-items: center; justify-content: center; mat-icon { font-size: 18px; width: 18px; height: 18px; } &:hover { color: $parchment; background: rgba($parchment,.06); } &:disabled { opacity: .5; cursor: not-allowed; } }
+.btn-upload-sm { background: none; border: 1px solid rgba($gold,.25); border-radius: 3px; padding: 8px 16px; font-size: 0.78rem; color: $gold; cursor: pointer; font-family: 'DM Sans', sans-serif; &:hover { background: rgba($gold,.08); } }
+
+@media (max-width: 900px) { .content-columns { grid-template-columns: 1fr; } .upload-form { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .case-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .docs-page { padding: 16px; } .page-header { flex-direction: column; } .dp-meta-grid { grid-template-columns: 1fr; } }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPEND these rules to BOTH:
+//   client-messages.component.scss
+//   lawyer-messages.component.scss
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Conv header actions (pencil + badge together) ─────────────────────────────
+.conv-header-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.btn-new-conv {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.25);
+  color: #C9A84C; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .18s ease;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { background: rgba(#C9A84C,.2); }
+}
+
+// ── "Start a conversation" button (empty state) ───────────────────────────────
+.btn-start-first {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.25);
+  border-radius: 3px; padding: 8px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #C9A84C;
+  margin-top: 4px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { background: rgba(#C9A84C,.18); }
+}
+
+// ── Chat empty: Message button ────────────────────────────────────────────────
+.btn-empty-new {
+  display: flex; align-items: center; gap: 7px;
+  background: #C9A84C; color: #0D0C0A; border: none;
+  border-radius: 3px; padding: 10px 20px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600;
+  margin-top: 8px; transition: background .18s ease;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover { background: #E2C47A; }
+}
+
+// ── New conversation panel (right side) ───────────────────────────────────────
+.new-conv-panel {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: #0D0C0A; padding: 32px;
+}
+
+.ncp-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  max-width: 380px; width: 100%; text-align: center;
+}
+
+.ncp-icon {
+  font-size: 48px !important; width: 48px !important; height: 48px !important;
+  color: #C9A84C; opacity: .5;
+}
+
+.ncp-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem; font-weight: 700; color: #F5F0E8; margin: 0;
+}
+
+.ncp-sub {
+  font-size: 0.82rem; color: #7A7469; margin: 0;
+}
+
+.ncp-select {
+  width: 100%; background: #252320; border: 1px solid rgba(#C9A84C,.2);
+  border-radius: 4px; padding: 12px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: #F5F0E8;
+  outline: none; cursor: pointer;
+  option { background: #252320; }
+  &:focus { border-color: rgba(#C9A84C,.4); }
+}
+
+.ncp-actions {
+  display: flex; gap: 10px; width: 100%;
+}
+
+.btn-ncp-cancel {
+  flex: 1; background: none; border: 1px solid rgba(#F5F0E8,.12);
+  border-radius: 3px; padding: 10px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: #7A7469;
+  &:hover { color: #F5F0E8; border-color: rgba(#F5F0E8,.25); }
+}
+
+.btn-ncp-go {
+  flex: 2; display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: #C9A84C; border: none; border-radius: 3px; padding: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600;
+  color: #0D0C0A; cursor: pointer;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #E2C47A; }
+}
+
+// ── Thread empty hint ─────────────────────────────────────────────────────────
+.thread-empty-hint {
+  font-size: 0.72rem; color: #7A7469;
+}
+
+// ── Header unread (lawyer only) ───────────────────────────────────────────────
+.header-unread {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.72rem; font-weight: 600; color: #C9A84C;
+  background: rgba(#C9A84C,.1); border: 1px solid rgba(#C9A84C,.2);
+  border-radius: 3px; padding: 4px 10px; flex-shrink: 0;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+// ── Conv case icon ────────────────────────────────────────────────────────────
+.conv-case-icon {
+  font-size: 11px !important; width: 11px !important; height: 11px !important;
+  opacity: .5; flex-shrink: 0;
+}

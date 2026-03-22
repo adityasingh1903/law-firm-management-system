@@ -1,0 +1,397 @@
+<!-- src/app/lawyer/hearings/lawyer-hearings.component.html -->
+
+<div class="hearings-page">
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       Page Header
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Hearings</h1>
+      <p class="page-sub">Schedule and manage court hearings for your cases.</p>
+    </div>
+    <div class="header-right">
+      <div class="header-counters" *ngIf="grouped">
+        <div class="counter-chip">
+          <span class="counter-num">{{ grouped.totalUpcoming }}</span>
+          <span class="counter-lbl">Upcoming</span>
+        </div>
+        <div class="counter-divider"></div>
+        <div class="counter-chip">
+          <span class="counter-num dim">{{ grouped.totalPast }}</span>
+          <span class="counter-lbl">Past</span>
+        </div>
+      </div>
+      <button class="btn-schedule" (click)="openScheduleModal()">
+        <mat-icon>add</mat-icon> Schedule Hearing
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       Loading
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="state-loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    <span>Loading hearings…</span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       Error
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="state-error" *ngIf="error && !loading">
+    <mat-icon>error_outline</mat-icon>
+    {{ error }}
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       Content
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="!loading && !error && grouped">
+
+    <!-- ── Next Hearing Banner ──────────────────────────────────────────────── -->
+    <div class="next-banner" *ngIf="grouped.upcoming.length > 0">
+      <div class="banner-inner">
+        <div class="banner-date-tile">
+          <span class="tile-day">{{ getDay(grouped.upcoming[0].hearingDate) }}</span>
+          <span class="tile-mon">{{ getMonth(grouped.upcoming[0].hearingDate) }}</span>
+        </div>
+        <div class="banner-info">
+          <p class="banner-eyebrow">Next Hearing</p>
+          <h3 class="banner-title">{{ grouped.upcoming[0].title }}</h3>
+          <div class="banner-meta">
+            <span>
+              <mat-icon class="meta-icon">gavel</mat-icon>
+              {{ grouped.upcoming[0].caseTitle }}
+            </span>
+            <span class="meta-sep">·</span>
+            <span>
+              <mat-icon class="meta-icon">schedule</mat-icon>
+              {{ getTime(grouped.upcoming[0].hearingDate) }}
+            </span>
+            <span class="meta-sep" *ngIf="grouped.upcoming[0].courtName">·</span>
+            <span *ngIf="grouped.upcoming[0].courtName">
+              <mat-icon class="meta-icon">location_on</mat-icon>
+              {{ grouped.upcoming[0].courtName }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="banner-right">
+        <div class="countdown">
+          <span class="countdown-num">{{ daysUntil(grouped.upcoming[0].hearingDate) }}</span>
+          <span class="countdown-lbl">days away</span>
+        </div>
+        <button class="btn-view" (click)="openDetail(grouped.upcoming[0])">
+          View Details <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Two-column layout: list + detail panel ───────────────────────────── -->
+    <div class="content-columns">
+
+      <!-- LEFT: tab list -->
+      <div class="list-column">
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="activeTab === 'upcoming'" (click)="setTab('upcoming')">
+            Upcoming
+            <span class="tab-count">{{ grouped.totalUpcoming }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'past'" (click)="setTab('past')">
+            Past
+            <span class="tab-count dim">{{ grouped.totalPast }}</span>
+          </button>
+        </div>
+
+        <!-- Empty state -->
+        <div class="state-empty" *ngIf="displayList.length === 0">
+          <mat-icon>event_busy</mat-icon>
+          <p>No {{ activeTab }} hearings.</p>
+          <button class="btn-schedule-sm" *ngIf="activeTab === 'upcoming'"
+                  (click)="openScheduleModal()">Schedule one now</button>
+        </div>
+
+        <!-- Hearing rows -->
+        <div class="hearing-list">
+          <div class="hearing-row"
+               *ngFor="let h of displayList"
+               [class.hearing-row--active]="selectedHearing?.id === h.id"
+               [class.hearing-row--past]="activeTab === 'past'"
+               (click)="openDetail(h)">
+
+            <!-- Date pill -->
+            <div class="row-date">
+              <span class="row-day">{{ getDay(h.hearingDate) }}</span>
+              <span class="row-mon">{{ getMonth(h.hearingDate) }}</span>
+            </div>
+
+            <!-- Info -->
+            <div class="row-body">
+              <div class="row-title-line">
+                <span class="row-title">{{ h.title }}</span>
+                <span class="badge" [ngClass]="statusClass(h.status)">{{ statusLabel(h.status) }}</span>
+              </div>
+              <div class="row-sub">
+                <mat-icon class="row-icon">gavel</mat-icon>
+                {{ h.caseTitle }}
+                <span class="case-num" *ngIf="h.caseNumber">&nbsp;#{{ h.caseNumber }}</span>
+              </div>
+              <div class="row-meta">
+                <span *ngIf="h.courtName">
+                  <mat-icon class="row-icon">location_on</mat-icon>{{ h.courtName }}
+                  <ng-container *ngIf="h.courtRoom">&nbsp;· {{ h.courtRoom }}</ng-container>
+                </span>
+                <span>
+                  <mat-icon class="row-icon">schedule</mat-icon>{{ getTime(h.hearingDate) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <mat-icon class="row-arrow">chevron_right</mat-icon>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: detail panel -->
+      <div class="detail-panel" *ngIf="selectedHearing">
+
+        <!-- Panel header -->
+        <div class="dp-header">
+          <div class="dp-date-tile">
+            <span class="dpt-day">{{ getDay(selectedHearing.hearingDate) }}</span>
+            <span class="dpt-mon">{{ getMonth(selectedHearing.hearingDate) }}</span>
+            <span class="dpt-year">{{ getYear(selectedHearing.hearingDate) }}</span>
+          </div>
+          <div class="dp-header-info">
+            <div class="dp-case-num" *ngIf="selectedHearing.caseNumber">
+              #{{ selectedHearing.caseNumber }}
+            </div>
+            <h2 class="dp-title">{{ selectedHearing.title }}</h2>
+            <span class="badge badge--lg" [ngClass]="statusClass(selectedHearing.status)">
+              {{ statusLabel(selectedHearing.status) }}
+            </span>
+          </div>
+          <button class="dp-close-btn" (click)="closeDetail()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Time row -->
+        <div class="dp-time-row">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ getFullDate(selectedHearing.hearingDate) }}</span>
+          <span class="time-sep">·</span>
+          <span class="time-value">{{ getTime(selectedHearing.hearingDate) }}</span>
+        </div>
+
+        <!-- ── Lawyer-only action row ──────────────────────────────────────── -->
+        <div class="dp-action-row">
+          <button class="dp-action-btn" (click)="openEditModal(selectedHearing)">
+            <mat-icon>edit</mat-icon> Edit
+          </button>
+          <button class="dp-action-btn" (click)="editStatusMode = !editStatusMode">
+            <mat-icon>swap_horiz</mat-icon> Status
+          </button>
+          <button class="dp-action-btn dp-action-btn--danger"
+                  *ngIf="selectedHearing.status === 'SCHEDULED'"
+                  (click)="deleteHearing(selectedHearing)">
+            <mat-icon>delete_outline</mat-icon> Delete
+          </button>
+        </div>
+
+        <!-- Status inline editor -->
+        <div class="inline-editor" *ngIf="editStatusMode">
+          <select class="form-input" [(ngModel)]="newStatus">
+            <option *ngFor="let s of hearingStatuses" [value]="s">{{ statusLabel(s) }}</option>
+          </select>
+          <div class="editor-btns">
+            <button class="btn-cancel-sm" (click)="editStatusMode = false">Cancel</button>
+            <button class="btn-save-sm" (click)="saveStatus()" [disabled]="savingStatus">
+              <mat-progress-spinner *ngIf="savingStatus" mode="indeterminate" diameter="14"></mat-progress-spinner>
+              {{ savingStatus ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Detail cards grid -->
+        <div class="dp-cards">
+
+          <div class="dp-card" *ngIf="selectedHearing.courtName">
+            <div class="dp-card-label">
+              <mat-icon>location_on</mat-icon> Venue
+            </div>
+            <div class="dp-card-value">{{ selectedHearing.courtName }}</div>
+            <div class="dp-card-sub" *ngIf="selectedHearing.courtRoom">
+              {{ selectedHearing.courtRoom }}
+            </div>
+          </div>
+
+          <div class="dp-card" *ngIf="selectedHearing.judgeName">
+            <div class="dp-card-label">
+              <mat-icon>person</mat-icon> Presiding Judge
+            </div>
+            <div class="dp-card-value">{{ selectedHearing.judgeName }}</div>
+          </div>
+
+          <div class="dp-card">
+            <div class="dp-card-label">
+              <mat-icon>gavel</mat-icon> Case
+            </div>
+            <div class="dp-card-value">{{ selectedHearing.caseTitle }}</div>
+            <div class="dp-card-sub" *ngIf="selectedHearing.caseNumber">
+              Case #{{ selectedHearing.caseNumber }}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Description -->
+        <ng-container *ngIf="selectedHearing.description">
+          <div class="dp-section-label">
+            <mat-icon>description</mat-icon> Description
+          </div>
+          <div class="dp-text-block">{{ selectedHearing.description }}</div>
+        </ng-container>
+
+        <!-- Notes -->
+        <ng-container *ngIf="selectedHearing.notes">
+          <div class="dp-section-label">
+            <mat-icon>sticky_note_2</mat-icon> Notes
+          </div>
+          <div class="dp-text-block dp-text-block--notes">{{ selectedHearing.notes }}</div>
+        </ng-container>
+
+      </div>
+
+      <!-- Right panel empty state -->
+      <div class="detail-panel detail-panel--empty"
+           *ngIf="!selectedHearing && displayList.length > 0">
+        <mat-icon>touch_app</mat-icon>
+        <p>Select a hearing to view details</p>
+      </div>
+
+    </div>
+  </ng-container>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     SCHEDULE / EDIT MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="scheduleModalOpen" (click)="closeScheduleModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-head">
+      <div>
+        <h3 class="modal-title">{{ isEditing ? 'Edit Hearing' : 'Schedule Hearing' }}</h3>
+        <p class="modal-sub">
+          {{ isEditing ? 'Update the hearing details below.'
+                       : 'Add a new court hearing for one of your active cases.' }}
+        </p>
+      </div>
+      <button class="dp-close-btn" (click)="closeScheduleModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <form [formGroup]="scheduleForm" (ngSubmit)="submitSchedule()" novalidate>
+
+      <!-- Case selector — locked when editing -->
+      <div class="form-field" *ngIf="!isEditing">
+        <label class="form-label">Case <span class="req">*</span></label>
+        <select class="form-input" formControlName="caseId">
+          <option [ngValue]="null" disabled>Select an active case…</option>
+          <option *ngFor="let c of cases" [ngValue]="c.id">
+            #{{ c.caseNumber }} — {{ c.title }}
+          </option>
+        </select>
+        <span class="form-error"
+              *ngIf="scheduleForm.get('caseId')?.invalid && scheduleForm.get('caseId')?.touched">
+          Case is required
+        </span>
+      </div>
+
+      <!-- Title -->
+      <div class="form-field">
+        <label class="form-label">Hearing Title <span class="req">*</span></label>
+        <input class="form-input" type="text" formControlName="title"
+               placeholder="e.g. Bail Application Hearing" />
+        <span class="form-error"
+              *ngIf="scheduleForm.get('title')?.invalid && scheduleForm.get('title')?.touched">
+          Title is required
+        </span>
+      </div>
+
+      <!-- Date + Time -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Date <span class="req">*</span></label>
+          <input class="form-input" type="date" formControlName="hearingDate" />
+          <span class="form-error"
+                *ngIf="scheduleForm.get('hearingDate')?.invalid && scheduleForm.get('hearingDate')?.touched">
+            Date is required
+          </span>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Time <span class="req">*</span></label>
+          <input class="form-input" type="time" formControlName="hearingTime" />
+          <span class="form-error"
+                *ngIf="scheduleForm.get('hearingTime')?.invalid && scheduleForm.get('hearingTime')?.touched">
+            Time is required
+          </span>
+        </div>
+      </div>
+
+      <!-- Court + Room -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Court Name</label>
+          <input class="form-input" type="text" formControlName="courtName"
+                 placeholder="e.g. Bombay High Court" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Court Room</label>
+          <input class="form-input" type="text" formControlName="courtRoom"
+                 placeholder="e.g. Court Room 4" />
+        </div>
+      </div>
+
+      <!-- Judge -->
+      <div class="form-field">
+        <label class="form-label">Presiding Judge</label>
+        <input class="form-input" type="text" formControlName="judgeName"
+               placeholder="Judge's name" />
+      </div>
+
+      <!-- Description -->
+      <div class="form-field">
+        <label class="form-label">Description</label>
+        <textarea class="form-input form-textarea" formControlName="description"
+                  placeholder="Purpose or agenda of this hearing…" rows="2"></textarea>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-field">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input form-textarea" formControlName="notes"
+                  placeholder="Internal preparation notes…" rows="2"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeScheduleModal()">Cancel</button>
+        <button type="submit" class="btn-gold" [disabled]="submitting">
+          <mat-progress-spinner *ngIf="submitting" mode="indeterminate" diameter="16"></mat-progress-spinner>
+          <mat-icon *ngIf="!submitting">{{ isEditing ? 'save' : 'event' }}</mat-icon>
+          {{ submitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Schedule Hearing' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

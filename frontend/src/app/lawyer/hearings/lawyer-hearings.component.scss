@@ -1,0 +1,356 @@
+// src/app/lawyer/hearings/lawyer-hearings.component.scss
+// Matches client-hearings.component.scss exactly — adds lawyer action styles on top
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+$ink:         #0D0C0A;
+$ink-soft:    #1A1916;
+$ink-mid:     #252320;
+$parchment:   #F5F0E8;
+$gold:        #C9A84C;
+$gold-light:  #E2C47A;
+$muted:       #7A7469;
+$muted-light: #ABA49A;
+$green:       #5DCAA5;
+$blue:        #378ADD;
+$red:         #d46060;
+$border:      rgba(201, 168, 76, 0.13);
+$border-soft: rgba(201, 168, 76, 0.07);
+$ease:        cubic-bezier(0.4, 0, 0.2, 1);
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+.hearings-page {
+  padding: 26px 30px;
+  font-family: 'DM Sans', sans-serif;
+  color: $parchment;
+  min-height: 100%;
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; margin-bottom: 20px;
+}
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 700; color: $parchment; margin: 0 0 4px;
+}
+.page-sub { font-size: 0.8rem; color: $muted; margin: 0; }
+
+.header-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+
+.header-counters {
+  display: flex; align-items: center; gap: 16px;
+  background: $ink-soft; border: 1px solid $border;
+  border-radius: 5px; padding: 10px 18px;
+}
+.counter-chip    { text-align: center; }
+.counter-num     { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; color: $gold; }
+.counter-num.dim { color: $muted-light; }
+.counter-lbl     { font-size: 0.6rem; text-transform: uppercase; letter-spacing: .1em; color: $muted; font-weight: 600; }
+.counter-divider { width: 1px; height: 30px; background: $border-soft; }
+
+// Schedule button — lawyer-only
+.btn-schedule {
+  display: flex; align-items: center; gap: 6px;
+  background: $gold; color: $ink; border: none; border-radius: 3px;
+  padding: 10px 18px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+  transition: background .2s $ease;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover { background: $gold-light; }
+}
+
+// ── Loading / Error ───────────────────────────────────────────────────────────
+.state-loading {
+  display: flex; align-items: center; gap: 14px;
+  padding: 48px 0; color: $muted; font-size: 0.85rem;
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $gold !important; }
+}
+.state-error {
+  display: flex; align-items: center; gap: 10px; color: $red;
+  background: rgba(#b83232,.08); border: 1px solid rgba(#b83232,.15);
+  border-radius: 4px; padding: 14px 16px; font-size: 0.85rem;
+  mat-icon { flex-shrink: 0; }
+}
+
+// ── Next hearing banner ───────────────────────────────────────────────────────
+.next-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  background: $ink-soft; border: 1px solid rgba($gold,.25);
+  border-radius: 6px; padding: 20px 24px; margin-bottom: 20px;
+  background-image: linear-gradient(135deg, rgba($gold,.06) 0%, transparent 55%);
+}
+.banner-inner      { display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0; }
+.banner-date-tile  {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 58px; background: rgba($gold,.1); border: 1px solid rgba($gold,.25);
+  border-radius: 4px; padding: 10px 6px; flex-shrink: 0;
+}
+.tile-day          { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: $gold; line-height: 1; }
+.tile-mon          { font-size: 0.58rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: $muted; margin-top: 2px; }
+.banner-eyebrow    { font-size: 0.6rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: $gold; margin: 0 0 4px; }
+.banner-title      { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700; color: $parchment; margin: 0 0 8px; }
+.banner-meta       { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.76rem; color: $muted-light; }
+.meta-sep          { color: $muted; opacity: .5; }
+.meta-icon         { font-size: 13px !important; width: 13px !important; height: 13px !important; vertical-align: middle; margin-right: 2px; }
+.banner-right      { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+.countdown         { text-align: center; }
+.countdown-num     { display: block; font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: $gold; line-height: 1; }
+.countdown-lbl     { font-size: 0.6rem; text-transform: uppercase; letter-spacing: .1em; color: $muted; font-weight: 600; }
+.btn-view {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba($gold,.1); border: 1px solid rgba($gold,.25); border-radius: 3px;
+  padding: 9px 16px; cursor: pointer; color: $gold;
+  font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600;
+  transition: background .2s $ease;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { background: rgba($gold,.18); }
+}
+
+// ── Two-column layout ─────────────────────────────────────────────────────────
+.content-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+.tab-bar {
+  display: flex; gap: 4px; border-bottom: 1px solid $border-soft; margin-bottom: 14px;
+}
+.tab-btn {
+  display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 500;
+  color: $muted; padding: 9px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .2s $ease, border-color .2s $ease;
+  &.active { color: $gold; border-bottom-color: $gold; }
+  &:hover:not(.active) { color: $parchment; }
+}
+.tab-count {
+  font-size: .62rem; font-weight: 700; background: rgba($gold,.12); color: $gold;
+  border-radius: 9px; padding: 1px 7px; min-width: 20px; text-align: center;
+  &.dim { background: rgba($parchment,.06); color: $muted-light; }
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.state-empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 48px 0; color: $muted; gap: 12px;
+  mat-icon { font-size: 36px; width: 36px; height: 36px; opacity: .2; }
+  p { font-size: 0.85rem; margin: 0; }
+}
+.btn-schedule-sm {
+  background: none; border: 1px solid rgba($gold,.25); border-radius: 3px;
+  padding: 8px 16px; font-size: 0.78rem; color: $gold; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  &:hover { background: rgba($gold,.08); }
+}
+
+// ── Hearing list ──────────────────────────────────────────────────────────────
+.hearing-list { display: flex; flex-direction: column; gap: 8px; }
+
+.hearing-row {
+  display: flex; align-items: center; gap: 0;
+  background: $ink-soft; border: 1px solid $border; border-radius: 5px;
+  cursor: pointer; overflow: hidden; transition: border-color .2s $ease, background .2s $ease;
+  &:hover    { border-color: rgba($gold,.3); background: rgba($gold,.03); .row-arrow { color: $gold; } }
+  &--active  { border-color: rgba($gold,.4) !important; background: rgba($gold,.06) !important; }
+  &--past    { opacity: .75; }
+}
+
+.row-date {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 16px 14px; min-width: 60px; flex-shrink: 0;
+  background: rgba($gold,.05); border-right: 1px solid $border-soft;
+}
+.row-day   { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; color: $gold; line-height: 1; }
+.row-mon   { font-size: 0.55rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: $muted; margin-top: 2px; }
+.row-body  { flex: 1; padding: 13px 14px; min-width: 0; }
+.row-title-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.row-title { font-size: 0.86rem; font-weight: 600; color: $parchment; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-sub   { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: $muted-light; margin-bottom: 4px; }
+.case-num  { color: $muted; font-size: 0.68rem; }
+.row-meta  { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.7rem; color: $muted; }
+.row-icon  { font-size: 11px !important; width: 11px !important; height: 11px !important; opacity: .6; vertical-align: middle; margin-right: 2px; }
+.row-arrow { padding: 0 12px; color: $muted; font-size: 18px !important; transition: color .2s $ease; }
+
+// ── Status badges ─────────────────────────────────────────────────────────────
+.badge {
+  font-size: .58rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 2px; flex-shrink: 0;
+  &--lg          { font-size: .63rem; padding: 4px 11px; }
+  &--scheduled   { background: rgba($green,.1);  color: $green;  border: 1px solid rgba($green,.2); }
+  &--completed   { background: rgba($blue,.1);   color: $blue;   border: 1px solid rgba($blue,.2); }
+  &--postponed   { background: rgba($gold,.1);   color: $gold;   border: 1px solid rgba($gold,.2); }
+  &--cancelled   { background: rgba($red,.1);    color: $red;    border: 1px solid rgba($red,.2); }
+}
+
+// ── Detail panel ──────────────────────────────────────────────────────────────
+.detail-panel {
+  background: $ink-soft; border: 1px solid $border; border-radius: 6px; padding: 20px 22px;
+  position: sticky; top: 16px; animation: slideIn .2s $ease both;
+  max-height: calc(100vh - 160px); overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+
+  &--empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 60px 22px; border-style: dashed; border-color: rgba($parchment,.08);
+    color: $muted;
+    mat-icon { font-size: 32px; width: 32px; height: 32px; opacity: .2; }
+    p { font-size: 0.82rem; margin: 0; }
+  }
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+
+.dp-header {
+  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px;
+}
+.dp-date-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 58px; min-width: 58px; background: rgba($gold,.08);
+  border: 1px solid rgba($gold,.2); border-radius: 4px; padding: 10px 6px; flex-shrink: 0;
+}
+.dpt-day   { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 700; color: $gold; line-height: 1; }
+.dpt-mon   { font-size: 0.58rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: $muted; margin-top: 2px; }
+.dpt-year  { font-size: 0.6rem; color: $muted; margin-top: 2px; }
+.dp-header-info { flex: 1; min-width: 0; }
+.dp-case-num    { font-size: 0.68rem; color: $gold; font-weight: 600; letter-spacing: .06em; margin-bottom: 4px; }
+.dp-title       { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 700; color: $parchment; margin: 0 0 8px; }
+
+.dp-close-btn {
+  width: 30px; height: 30px; background: none; border: none; cursor: pointer;
+  color: $muted; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { color: $parchment; background: rgba($parchment,.06); }
+}
+
+.dp-time-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; color: $muted-light; margin-bottom: 12px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; opacity: .6; }
+}
+.time-sep   { color: $muted; opacity: .4; }
+.time-value { color: $gold; font-weight: 600; }
+
+// ── Lawyer-only action row ────────────────────────────────────────────────────
+.dp-action-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.dp-action-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba($parchment,.05); border: 1px solid $border-soft;
+  border-radius: 3px; padding: 7px 11px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: $muted-light;
+  transition: background .2s $ease, color .2s $ease;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: rgba($gold,.08); color: $gold; border-color: rgba($gold,.2); }
+  &--danger {
+    color: rgba($red,.7);
+    &:hover { background: rgba($red,.08); color: $red; border-color: rgba($red,.2); }
+  }
+}
+
+// Inline status editor
+.inline-editor {
+  background: $ink-mid; border: 1px solid $border; border-radius: 4px;
+  padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;
+  animation: fadeIn .15s $ease;
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.editor-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-cancel-sm {
+  background: none; border: 1px solid rgba($parchment,.12); border-radius: 3px;
+  padding: 6px 14px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: $muted; cursor: pointer;
+  &:hover { color: $parchment; }
+}
+.btn-save-sm {
+  display: flex; align-items: center; gap: 6px;
+  background: $gold; border: none; border-radius: 3px; padding: 6px 16px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; color: $ink; cursor: pointer;
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $ink !important; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: $gold-light; }
+}
+
+.dp-divider { height: 1px; background: $border-soft; margin: 12px 0; }
+
+.dp-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.dp-card  { background: $ink-mid; border: 1px solid $border-soft; border-radius: 4px; padding: 12px 14px; }
+.dp-card-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: $muted; margin-bottom: 6px;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; opacity: .7; }
+}
+.dp-card-value { font-size: 0.85rem; font-weight: 600; color: $parchment; }
+.dp-card-sub   { font-size: 0.72rem; color: $muted; margin-top: 3px; }
+
+.dp-section-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: $gold; margin: 14px 0 8px;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; opacity: .8; }
+}
+.dp-text-block {
+  font-size: 0.83rem; color: $muted-light; line-height: 1.7; white-space: pre-wrap;
+  &--notes { background: $ink-mid; border-left: 2px solid rgba($gold,.35); border-radius: 0 4px 4px 0; padding: 12px 14px; }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba($ink,.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-card {
+  background: $ink-soft; border: 1px solid $border; border-radius: 8px;
+  padding: 24px 26px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: modalIn .2s $ease both;
+  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+}
+@keyframes modalIn { from { opacity:0; transform:scale(.96) translateY(8px); } to { opacity:1; transform:none; } }
+
+.modal-head  { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 700; color: $parchment; margin: 0 0 4px; }
+.modal-sub   { font-size: 0.78rem; color: $muted; margin: 0; }
+
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-label { font-size: 0.65rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: $muted; }
+.req        { color: $red; }
+.form-input {
+  background: $ink-mid; border: 1px solid $border; border-radius: 3px;
+  padding: 10px 13px; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: $parchment;
+  outline: none; width: 100%; transition: border-color .2s $ease;
+  &:focus { border-color: rgba($gold,.4); }
+  &::placeholder { color: $muted; }
+  option { background: $ink-mid; }
+}
+.form-textarea { resize: vertical; min-height: 70px; }
+.form-error    { font-size: 0.72rem; color: $red; }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.btn-cancel {
+  background: none; border: 1px solid rgba($parchment,.12); border-radius: 3px;
+  padding: 10px 18px; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: $muted; cursor: pointer;
+  &:hover { color: $parchment; border-color: rgba($parchment,.25); }
+}
+.btn-gold {
+  display: flex; align-items: center; gap: 7px;
+  background: $gold; border: none; border-radius: 3px; padding: 10px 20px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600; color: $ink; cursor: pointer;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  ::ng-deep .mat-mdc-progress-spinner circle { stroke: $ink !important; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: $gold-light; }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .content-columns  { grid-template-columns: 1fr; }
+  .next-banner      { flex-direction: column; align-items: flex-start; }
+  .form-row         { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .hearings-page    { padding: 16px; }
+  .page-header      { flex-direction: column; }
+  .header-right     { width: 100%; justify-content: space-between; }
+  .dp-cards         { grid-template-columns: 1fr; }
+}

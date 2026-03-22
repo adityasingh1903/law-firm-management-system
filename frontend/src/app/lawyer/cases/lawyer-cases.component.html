@@ -1,0 +1,448 @@
+<!-- src/app/lawyer/cases/lawyer-cases.component.html -->
+
+<div class="cases-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Cases</h1>
+      <p class="page-sub">Manage your assigned cases and review client requests.</p>
+    </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <span class="hstat-num">{{ activeCaseCount }}</span>
+        <span class="hstat-lbl">Active</span>
+      </div>
+      <div class="hstat-div"></div>
+      <div class="hstat">
+        <span class="hstat-num" [class.hstat-num--alert]="pendingCount > 0">{{ pendingCount }}</span>
+        <span class="hstat-lbl">New Requests</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ─────────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'cases'" (click)="setTab('cases')">
+      <mat-icon>folder</mat-icon> My Cases
+      <span class="tab-count">{{ cases.length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'requests'" (click)="setTab('requests')">
+      <mat-icon>inbox</mat-icon> Client Requests
+      <span class="tab-count tab-count--alert" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'handled'" (click)="setTab('handled')">
+      <mat-icon>history</mat-icon> Handled
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 1 — MY CASES
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'cases'">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input class="search-input" type="text" placeholder="Search cases…"
+               [(ngModel)]="searchKeyword" (ngModelChange)="applyFilters()" />
+        <button class="clear-btn" *ngIf="searchKeyword" (click)="searchKeyword=''; applyFilters()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+        <option value="">All Statuses</option>
+        <option *ngFor="let s of caseStatuses" [value]="s">{{ statusLabels[s] }}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+        <option value="">All Types</option>
+        <option *ngFor="let t of caseTypes" [value]="t">{{ typeLabels[t] }}</option>
+      </select>
+      <button class="btn-clear-filters" *ngIf="activeFilterCount > 0" (click)="clearFilters()">
+        <mat-icon>filter_alt_off</mat-icon> Clear ({{ activeFilterCount }})
+      </button>
+      <span class="result-count">{{ filteredCases.length }} case{{ filteredCases.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- Loading -->
+    <div class="state-loading" *ngIf="loadingCases">
+      <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+      <span>Loading cases…</span>
+    </div>
+
+    <!-- Empty -->
+    <div class="state-empty" *ngIf="!loadingCases && filteredCases.length === 0">
+      <mat-icon>folder_open</mat-icon>
+      <p>No cases found.</p>
+    </div>
+
+    <!-- Two-column layout: list + detail -->
+    <div class="content-columns" *ngIf="!loadingCases && filteredCases.length > 0">
+
+      <!-- Case list -->
+      <div class="list-col">
+        <div class="case-row"
+             *ngFor="let c of filteredCases"
+             [class.case-row--active]="selectedCase?.id === c.id"
+             (click)="openDetail(c)">
+
+          <div class="case-row-body">
+            <div class="case-row-top">
+              <span class="case-num">#{{ c.caseNumber }}</span>
+              <span class="case-badge" [ngClass]="statusClass(c.status)">
+                {{ statusLabels[c.status] }}
+              </span>
+            </div>
+            <div class="case-title">{{ c.title }}</div>
+            <div class="case-meta">
+              <span *ngIf="c.clientName">
+                <mat-icon class="meta-icon">person</mat-icon>{{ c.clientName }}
+              </span>
+              <span *ngIf="c.courtName">
+                <mat-icon class="meta-icon">location_on</mat-icon>{{ c.courtName }}
+              </span>
+              <span *ngIf="c.caseType">
+                <mat-icon class="meta-icon">label</mat-icon>{{ typeLabel(c.caseType) }}
+              </span>
+            </div>
+            <div class="case-footer">
+              <span class="case-fees" *ngIf="c.feesCharged">{{ formatCurrency(c.feesCharged) }}</span>
+              <span class="case-date">{{ formatDate(c.dateOpened) }}</span>
+            </div>
+          </div>
+          <mat-icon class="row-arrow">chevron_right</mat-icon>
+        </div>
+      </div>
+
+      <!-- Detail panel -->
+      <div class="detail-panel" *ngIf="selectedCase">
+
+        <!-- Header -->
+        <div class="dp-header">
+          <div class="dp-header-info">
+            <div class="dp-case-num">#{{ selectedCase.caseNumber }}</div>
+            <h2 class="dp-title">{{ selectedCase.title }}</h2>
+            <span class="case-badge case-badge--lg" [ngClass]="statusClass(selectedCase.status)">
+              {{ statusLabels[selectedCase.status] }}
+            </span>
+          </div>
+          <button class="icon-btn" (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Case Progress Timeline -->
+        <div class="dp-section-label"><mat-icon>linear_scale</mat-icon> Progress</div>
+        <div class="timeline">
+          <div class="tl-step" *ngFor="let step of getTimelineSteps(); let last = last"
+               [class.done]="step.done" [class.active]="step.active">
+            <div class="tl-dot">
+              <mat-icon *ngIf="step.done">check</mat-icon>
+            </div>
+            <span class="tl-label">{{ step.label }}</span>
+            <div class="tl-line" *ngIf="!last"></div>
+          </div>
+        </div>
+
+        <!-- Update Status -->
+        <div class="dp-action-row">
+          <button class="dp-action-btn" (click)="editStatusMode = !editStatusMode; editNotesMode = false">
+            <mat-icon>edit</mat-icon> Update Status
+          </button>
+          <button class="dp-action-btn" (click)="editNotesMode = !editNotesMode; editStatusMode = false">
+            <mat-icon>sticky_note_2</mat-icon> Edit Notes
+          </button>
+        </div>
+
+        <!-- Status editor -->
+        <div class="inline-editor" *ngIf="editStatusMode">
+          <select class="form-input" [(ngModel)]="newStatus">
+            <option *ngFor="let s of caseStatuses" [value]="s">{{ statusLabels[s] }}</option>
+          </select>
+          <div class="editor-btns">
+            <button class="btn-cancel-sm" (click)="editStatusMode = false">Cancel</button>
+            <button class="btn-save-sm" (click)="saveStatus()" [disabled]="savingStatus">
+              <mat-progress-spinner *ngIf="savingStatus" mode="indeterminate" diameter="14"></mat-progress-spinner>
+              {{ savingStatus ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Notes editor -->
+        <div class="inline-editor" *ngIf="editNotesMode">
+          <textarea class="form-input form-textarea" [(ngModel)]="notesValue"
+                    placeholder="Add case notes, observations, next steps…" rows="4"></textarea>
+          <div class="editor-btns">
+            <button class="btn-cancel-sm" (click)="editNotesMode = false">Cancel</button>
+            <button class="btn-save-sm" (click)="saveNotes()" [disabled]="savingNotes">
+              <mat-progress-spinner *ngIf="savingNotes" mode="indeterminate" diameter="14"></mat-progress-spinner>
+              {{ savingNotes ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Client info -->
+        <div class="dp-section-label"><mat-icon>person</mat-icon> Client</div>
+        <div class="dp-client-card" *ngIf="selectedCase.clientName">
+          <div class="client-avatar">{{ getInitials(selectedCase.clientName) }}</div>
+          <div>
+            <div class="client-name">{{ selectedCase.clientName }}</div>
+            <div class="client-email" *ngIf="selectedCase.clientEmail">{{ selectedCase.clientEmail }}</div>
+          </div>
+        </div>
+        <p class="dp-empty-note" *ngIf="!selectedCase.clientName">No client linked.</p>
+
+        <!-- Case details grid -->
+        <div class="dp-section-label"><mat-icon>info</mat-icon> Details</div>
+        <div class="dp-details-grid">
+          <div class="ddg-item" *ngIf="selectedCase.caseType">
+            <span class="ddg-key">Type</span>
+            <span class="ddg-val">{{ typeLabel(selectedCase.caseType) }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.courtName">
+            <span class="ddg-key">Court</span>
+            <span class="ddg-val">{{ selectedCase.courtName }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.judgeName">
+            <span class="ddg-key">Judge</span>
+            <span class="ddg-val">{{ selectedCase.judgeName }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.opposingCounsel">
+            <span class="ddg-key">Opposing Counsel</span>
+            <span class="ddg-val">{{ selectedCase.opposingCounsel }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.feesCharged">
+            <span class="ddg-key">Fees</span>
+            <span class="ddg-val">{{ formatCurrency(selectedCase.feesCharged) }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.dateOpened">
+            <span class="ddg-key">Opened</span>
+            <span class="ddg-val">{{ formatDate(selectedCase.dateOpened) }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedCase.nextHearingDate">
+            <span class="ddg-key">Next Hearing</span>
+            <span class="ddg-val">{{ formatDate(selectedCase.nextHearingDate) }}</span>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <ng-container *ngIf="selectedCase.description && !editNotesMode">
+          <div class="dp-section-label"><mat-icon>notes</mat-icon> Notes</div>
+          <div class="dp-notes">{{ selectedCase.description }}</div>
+        </ng-container>
+
+      </div>
+
+      <!-- Detail placeholder -->
+      <div class="detail-panel detail-panel--empty" *ngIf="!selectedCase">
+        <mat-icon>touch_app</mat-icon>
+        <p>Select a case to view details</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 2 — CLIENT REQUESTS
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'requests'">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <select class="filter-select" [(ngModel)]="filterReqType" (ngModelChange)="onReqTypeFilter()">
+        <option value="">All Case Types</option>
+        <option *ngFor="let t of caseTypes" [value]="t">{{ typeLabels[t] }}</option>
+      </select>
+      <span class="result-count">{{ pendingRequests.length }} request{{ pendingRequests.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <div class="state-loading" *ngIf="loadingRequests">
+      <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+      <span>Loading requests…</span>
+    </div>
+
+    <div class="state-empty" *ngIf="!loadingRequests && pendingRequests.length === 0">
+      <mat-icon>inbox</mat-icon>
+      <p>No pending client requests.</p>
+    </div>
+
+    <div class="request-list" *ngIf="!loadingRequests && pendingRequests.length > 0">
+      <div class="request-card" *ngFor="let r of pendingRequests">
+
+        <div class="req-header">
+          <div class="req-header-left">
+            <span class="req-type-chip" *ngIf="r.caseType">{{ typeLabel(r.caseType) }}</span>
+            <span class="urgency-badge" [ngClass]="urgencyClass(r.urgency)">{{ r.urgency }}</span>
+          </div>
+          <span class="req-time">{{ formatRelative(r.createdAt) }}</span>
+        </div>
+
+        <h3 class="req-title">{{ r.title }}</h3>
+        <p class="req-desc">{{ r.description }}</p>
+
+        <div class="req-client">
+          <div class="req-client-av">{{ getInitials(r.clientName) }}</div>
+          <div>
+            <div class="req-client-name">{{ r.clientName }}</div>
+            <div class="req-client-label">Client</div>
+          </div>
+        </div>
+
+        <div class="req-actions">
+          <button class="btn-accept" (click)="openAcceptModal(r)">
+            <mat-icon>check_circle</mat-icon> Accept Case
+          </button>
+          <button class="btn-reject" (click)="openRejectModal(r)">
+            <mat-icon>cancel</mat-icon> Decline
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 3 — HANDLED REQUESTS
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'handled'">
+
+    <div class="state-loading" *ngIf="loadingHandled">
+      <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+      <span>Loading history…</span>
+    </div>
+
+    <div class="state-empty" *ngIf="!loadingHandled && handledRequests.length === 0">
+      <mat-icon>history</mat-icon>
+      <p>No handled requests yet.</p>
+    </div>
+
+    <div class="handled-list" *ngIf="!loadingHandled && handledRequests.length > 0">
+      <div class="handled-row" *ngFor="let r of handledRequests">
+        <div class="handled-row-left">
+          <div class="handled-title">{{ r.title }}</div>
+          <div class="handled-client">{{ r.clientName }}</div>
+          <div class="handled-meta">
+            <span *ngIf="r.caseType">{{ typeLabel(r.caseType) }}</span>
+            <span>{{ formatDate(r.resolvedAt) }}</span>
+          </div>
+          <div class="handled-reason" *ngIf="r.status === 'REJECTED' && r.rejectionReason">
+            Reason: {{ r.rejectionReason }}
+          </div>
+        </div>
+        <div class="handled-row-right">
+          <span class="case-badge" [ngClass]="reqStatusClass(r.status)">{{ r.status }}</span>
+          <span class="case-link" *ngIf="r.createdCaseId">
+            <mat-icon>open_in_new</mat-icon> Case #{{ r.createdCaseId }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     ACCEPT MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="acceptModalOpen" (click)="closeAcceptModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-head">
+      <div>
+        <h3 class="modal-title">Accept Case Request</h3>
+        <p class="modal-sub">Fill in the case details to create a formal case.</p>
+      </div>
+      <button class="icon-btn" (click)="closeAcceptModal()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <div class="modal-request-preview" *ngIf="acceptingRequest">
+      <div class="mrp-title">{{ acceptingRequest.title }}</div>
+      <div class="mrp-client">Client: {{ acceptingRequest.clientName }}</div>
+    </div>
+
+    <form [formGroup]="acceptForm" (ngSubmit)="submitAccept()" novalidate>
+
+      <div class="form-field">
+        <label class="form-label">Case Number <span class="req">*</span></label>
+        <input class="form-input" type="text" formControlName="caseNumber"
+               placeholder="e.g. CASE-2026-001" />
+        <span class="form-error" *ngIf="acceptForm.get('caseNumber')?.invalid && acceptForm.get('caseNumber')?.touched">
+          Case number is required
+        </span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Court Name</label>
+          <input class="form-input" type="text" formControlName="courtName" placeholder="Court name" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Judge Name</label>
+          <input class="form-input" type="text" formControlName="judgeName" placeholder="Judge name" />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Fees Charged (₹)</label>
+        <input class="form-input" type="number" formControlName="feesCharged" placeholder="0" />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Initial Notes</label>
+        <textarea class="form-input form-textarea" formControlName="notes"
+                  placeholder="Any initial notes for this case…" rows="3"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeAcceptModal()">Cancel</button>
+        <button type="submit" class="btn-accept-submit" [disabled]="submittingAccept">
+          <mat-progress-spinner *ngIf="submittingAccept" mode="indeterminate" diameter="16"></mat-progress-spinner>
+          <mat-icon *ngIf="!submittingAccept">check_circle</mat-icon>
+          {{ submittingAccept ? 'Creating Case…' : 'Accept & Create Case' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     REJECT MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="rejectModalOpen" (click)="closeRejectModal()">
+  <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+
+    <div class="modal-head">
+      <div>
+        <h3 class="modal-title">Decline Request</h3>
+        <p class="modal-sub">Provide a reason so the client can seek other representation.</p>
+      </div>
+      <button class="icon-btn" (click)="closeRejectModal()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <div class="modal-request-preview" *ngIf="rejectingRequest">
+      <div class="mrp-title">{{ rejectingRequest.title }}</div>
+      <div class="mrp-client">Client: {{ rejectingRequest.clientName }}</div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label">Reason <span class="req">*</span></label>
+      <textarea class="form-input form-textarea" [(ngModel)]="rejectReason"
+                placeholder="Brief explanation for declining…" rows="3"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeRejectModal()">Cancel</button>
+      <button class="btn-reject-submit" (click)="submitReject()"
+              [disabled]="!rejectReason.trim() || submittingReject">
+        <mat-progress-spinner *ngIf="submittingReject" mode="indeterminate" diameter="16"></mat-progress-spinner>
+        <mat-icon *ngIf="!submittingReject">cancel</mat-icon>
+        {{ submittingReject ? 'Declining…' : 'Decline Request' }}
+      </button>
+    </div>
+
+  </div>
+</div>

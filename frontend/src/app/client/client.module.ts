@@ -18,6 +18,9 @@ import { ClientDashboardComponent } from './dashboard/client-dashboard.component
 import { ClientCasesComponent }     from './cases/client-cases.component';
 import { ClientHearingsComponent }  from './hearings/client-hearings.component';
 import { ClientMessagesComponent }  from './messages/client-messages.component';
+import { ClientDocumentsComponent } from './documents/client-documents.component';
+import { ClientBillingComponent } from './billing/client-billing.component';
+import { ClientProfileComponent } from './profile/client-profile.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +28,10 @@ import { ClientMessagesComponent }  from './messages/client-messages.component';
     ClientDashboardComponent,
     ClientCasesComponent,
     ClientHearingsComponent,
-    ClientMessagesComponent
+    ClientMessagesComponent,
+    ClientDocumentsComponent,
+    ClientBillingComponent,
+    ClientProfileComponent,
   ],
   imports: [
     CommonModule,
@@ -41,6 +47,9 @@ import { ClientMessagesComponent }  from './messages/client-messages.component';
           { path: 'cases',     component: ClientCasesComponent },
           { path: 'hearings',  component: ClientHearingsComponent },
           { path: 'messages',  component: ClientMessagesComponent },
+          { path: 'documents', component: ClientDocumentsComponent },
+          { path: 'billing', component: ClientBillingComponent },
+          { path: 'profile', component: ClientProfileComponent },
         ]
       }
     ]),

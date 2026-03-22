@@ -1,8 +1,8 @@
 package com.lawfirm.dto;
- 
+
 import com.lawfirm.entity.Case;
 import java.time.LocalDateTime;
- 
+
 public class ClientCaseDto {
     private Long id;
     private String caseNumber;
@@ -21,9 +21,10 @@ public class ClientCaseDto {
     private String lawyerEmail;
     private String lawyerPhone;
     private String lawyerSpecialization;
+    private Long   lawyerId;          // ← NEW: needed for messaging
     private int documentCount;
     private long unreadMessages;
- 
+
     public static ClientCaseDto fromEntity(Case c, long unreadMessages) {
         ClientCaseDto dto = new ClientCaseDto();
         dto.setId(c.getId());
@@ -41,8 +42,9 @@ public class ClientCaseDto {
         dto.setSettlementAmount(c.getSettlementAmount());
         dto.setDocumentCount(c.getDocuments() != null ? c.getDocuments().size() : 0);
         dto.setUnreadMessages(unreadMessages);
- 
+
         if (c.getAssignedLawyer() != null) {
+            dto.setLawyerId(c.getAssignedLawyer().getId());          // ← NEW
             dto.setLawyerName(c.getAssignedLawyer().getFirstName() + " " + c.getAssignedLawyer().getLastName());
             dto.setLawyerEmail(c.getAssignedLawyer().getEmail());
             dto.setLawyerPhone(c.getAssignedLawyer().getPhoneNumber());
@@ -50,7 +52,7 @@ public class ClientCaseDto {
         }
         return dto;
     }
- 
+
     // --- Getters and Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -78,6 +80,8 @@ public class ClientCaseDto {
     public void setFeesCharged(Double feesCharged) { this.feesCharged = feesCharged; }
     public Double getSettlementAmount() { return settlementAmount; }
     public void setSettlementAmount(Double settlementAmount) { this.settlementAmount = settlementAmount; }
+    public Long getLawyerId() { return lawyerId; }                   // ← NEW
+    public void setLawyerId(Long lawyerId) { this.lawyerId = lawyerId; } // ← NEW
     public String getLawyerName() { return lawyerName; }
     public void setLawyerName(String lawyerName) { this.lawyerName = lawyerName; }
     public String getLawyerEmail() { return lawyerEmail; }

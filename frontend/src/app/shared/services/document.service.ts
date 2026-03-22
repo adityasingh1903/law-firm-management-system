@@ -1,58 +1,87 @@
+// src/app/shared/services/document.service.ts
+
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Document, UploadDocumentRequest } from '../models/document.model';
 import { environment } from '../../../environments/environment';
+import { DocumentDto } from '../models/document.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class DocumentService {
-  private apiUrl = environment.apiUrl;
 
-  constructor() {}
+  private base = `${environment.apiUrl}/client`;
 
-  getDocuments(): Observable<Document[]> {
-    // TODO: Implement get documents API call
-    throw new Error('Not implemented yet');
+  constructor(private http: HttpClient) {}
+
+  /** GET /api/client/documents — all documents across all cases */
+  getMyDocuments(): Observable<DocumentDto[]> {
+    return this.http.get<DocumentDto[]>(`${this.base}/documents`);
   }
 
-  getDocumentById(id: number): Observable<Document> {
-    // TODO: Implement get document by ID API call
-    throw new Error('Not implemented yet');
+  /** GET /api/client/documents/:id */
+  getDocumentDetail(id: number): Observable<DocumentDto> {
+    return this.http.get<DocumentDto>(`${this.base}/documents/${id}`);
   }
 
-  uploadDocument(documentData: UploadDocumentRequest): Observable<Document> {
-    // TODO: Implement upload document API call
-    throw new Error('Not implemented yet');
+  /** GET /api/client/cases/:caseId/documents */
+  getDocumentsForCase(caseId: number): Observable<DocumentDto[]> {
+    return this.http.get<DocumentDto[]>(`${this.base}/cases/${caseId}/documents`);
   }
 
-  updateDocument(id: number, documentData: Partial<Document>): Observable<Document> {
-    // TODO: Implement update document API call
-    throw new Error('Not implemented yet');
+  /** GET /api/client/documents/search?keyword=xyz */
+  searchDocuments(keyword: string): Observable<DocumentDto[]> {
+    const params = new HttpParams().set('keyword', keyword);
+    return this.http.get<DocumentDto[]>(`${this.base}/documents/search`, { params });
   }
 
-  deleteDocument(id: number): Observable<void> {
-    // TODO: Implement delete document API call
-    throw new Error('Not implemented yet');
+  /** GET /api/client/documents/filter?type=CONTRACT */
+  filterByType(type: string): Observable<DocumentDto[]> {
+    const params = new HttpParams().set('type', type);
+    return this.http.get<DocumentDto[]>(`${this.base}/documents/filter`, { params });
   }
 
-  getDocumentsByCase(caseId: number): Observable<Document[]> {
-    // TODO: Implement get documents by case API call
-    throw new Error('Not implemented yet');
+  /**
+   * POST /api/client/cases/:caseId/documents/upload
+   * Multipart upload with optional metadata.
+   */
+  uploadDocument(
+    caseId: number,
+    file: File,
+    title?: string,
+    description?: string,
+    documentType?: string
+  ): Observable<DocumentDto> {
+    const form = new FormData();
+    form.append('file', file);
+    if (title)        form.append('title', title);
+    if (description)  form.append('description', description);
+    if (documentType) form.append('documentType', documentType);
+    return this.http.post<DocumentDto>(
+      `${this.base}/cases/${caseId}/documents/upload`, form
+    );
   }
 
-  getDocumentsByUser(userId: number): Observable<Document[]> {
-    // TODO: Implement get documents by user API call
-    throw new Error('Not implemented yet');
+  /**
+   * GET /api/client/documents/:id/download
+   * Triggers a browser file download.
+   */
+  downloadDocument(id: number, fileName: string): void {
+    this.http.get(`${this.base}/documents/${id}/download`, { responseType: 'blob' })
+      .subscribe(blob => {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download  = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
   }
 
-  searchDocuments(keyword: string): Observable<Document[]> {
-    // TODO: Implement search documents API call
-    throw new Error('Not implemented yet');
-  }
-
-  downloadDocument(id: number): Observable<Blob> {
-    // TODO: Implement download document API call
-    throw new Error('Not implemented yet');
+  /** Format bytes → human-readable string */
+  formatFileSize(bytes: number | null): string {
+    if (!bytes) return '—';
+    if (bytes < 1024)             return `${bytes} B`;
+    if (bytes < 1024 * 1024)      return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 }

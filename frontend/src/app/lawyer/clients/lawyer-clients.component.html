@@ -1,0 +1,172 @@
+<!-- src/app/lawyer/clients/lawyer-clients.component.html -->
+
+<div class="clients-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Clients</h1>
+      <p class="page-sub">
+        {{ clients.length }} client{{ clients.length !== 1 ? 's' : '' }} across your cases
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Loading / Error ──────────────────────────────────────────────────── -->
+  <div class="state-loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    <span>Loading clients…</span>
+  </div>
+  <div class="state-error" *ngIf="error && !loading">
+    <mat-icon>error_outline</mat-icon> {{ error }}
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- ── Search bar ──────────────────────────────────────────────────────── -->
+    <div class="search-bar">
+      <div class="search-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input class="search-input" type="text" placeholder="Search by name, email or phone…"
+               [(ngModel)]="searchKeyword" (ngModelChange)="onSearch()" />
+        <button class="clear-btn" *ngIf="searchKeyword" (click)="clearSearch()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <span class="result-count">
+        {{ filteredClients.length }} result{{ filteredClients.length !== 1 ? 's' : '' }}
+      </span>
+    </div>
+
+    <!-- ── Empty ──────────────────────────────────────────────────────────── -->
+    <div class="state-empty" *ngIf="filteredClients.length === 0">
+      <mat-icon>people_outline</mat-icon>
+      <p>{{ searchKeyword ? 'No clients match your search.' : 'No clients yet.' }}</p>
+    </div>
+
+    <!-- ── Two-column layout ─────────────────────────────────────────────── -->
+    <div class="content-columns" *ngIf="filteredClients.length > 0">
+
+      <!-- Client list -->
+      <div class="list-col">
+        <div class="client-row"
+             *ngFor="let c of filteredClients"
+             [class.client-row--active]="selectedClient?.id === c.id"
+             (click)="openDetail(c)">
+
+          <!-- Avatar -->
+          <div class="client-avatar">{{ getInitials(c) }}</div>
+
+          <!-- Info -->
+          <div class="client-info">
+            <div class="client-name">{{ getFullName(c) }}</div>
+            <div class="client-email">{{ c.email }}</div>
+            <div class="client-meta">
+              <span *ngIf="c.phoneNumber">
+                <mat-icon class="meta-icon">phone</mat-icon>{{ c.phoneNumber }}
+              </span>
+              <span>
+                <mat-icon class="meta-icon">folder</mat-icon>
+                {{ getCaseCountForClient(c.id) }} case{{ getCaseCountForClient(c.id) !== 1 ? 's' : '' }}
+              </span>
+              <span *ngIf="getActiveCaseCount(c.id) > 0" class="active-tag">
+                {{ getActiveCaseCount(c.id) }} active
+              </span>
+            </div>
+          </div>
+
+          <mat-icon class="row-arrow">chevron_right</mat-icon>
+        </div>
+      </div>
+
+      <!-- Detail panel -->
+      <div class="detail-panel" *ngIf="selectedClient">
+
+        <!-- Header -->
+        <div class="dp-header">
+          <div class="dp-avatar">{{ getInitials(selectedClient) }}</div>
+          <div class="dp-header-info">
+            <h2 class="dp-name">{{ getFullName(selectedClient) }}</h2>
+            <div class="dp-email">{{ selectedClient.email }}</div>
+          </div>
+          <button class="icon-btn" (click)="closeDetail()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="dp-actions">
+          <button class="dp-btn dp-btn--message" (click)="messageClient(selectedClient.id)">
+            <mat-icon>chat</mat-icon> Message
+          </button>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Contact details -->
+        <div class="dp-section-label"><mat-icon>person</mat-icon> Contact</div>
+        <div class="dp-details-grid">
+          <div class="ddg-item">
+            <span class="ddg-key">Email</span>
+            <span class="ddg-val">{{ selectedClient.email }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedClient.phoneNumber">
+            <span class="ddg-key">Phone</span>
+            <span class="ddg-val">{{ selectedClient.phoneNumber }}</span>
+          </div>
+          <div class="ddg-item" *ngIf="selectedClient.address">
+            <span class="ddg-key">Address</span>
+            <span class="ddg-val">{{ selectedClient.address }}</span>
+          </div>
+          <div class="ddg-item">
+            <span class="ddg-key">Username</span>
+            <span class="ddg-val">{{ '@' + selectedClient.username }}</span>
+          </div>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <!-- Cases -->
+        <div class="dp-section-label">
+          <mat-icon>folder</mat-icon> Cases
+          <span class="case-count-chip">{{ clientCases.length }}</span>
+        </div>
+
+        <div class="dp-empty-note" *ngIf="clientCases.length === 0">
+          No cases found for this client.
+        </div>
+
+        <div class="dp-case-list">
+          <div class="dp-case-row" *ngFor="let c of clientCases" (click)="openCase(c.id)">
+            <div class="dp-case-info">
+              <div class="dp-case-num">#{{ c.caseNumber }}</div>
+              <div class="dp-case-title">{{ c.title }}</div>
+              <div class="dp-case-meta">
+                <span *ngIf="c.caseType">{{ c.caseType }}</span>
+                <span *ngIf="c.courtName">· {{ c.courtName }}</span>
+                <span *ngIf="c.dateOpened">· {{ formatDate(c.dateOpened) }}</span>
+              </div>
+            </div>
+            <div class="dp-case-right">
+              <span class="case-badge" [ngClass]="statusClass(c.status)">
+                {{ statusLabel(c.status) }}
+              </span>
+              <span class="dp-case-fees" *ngIf="c.feesCharged">
+                {{ formatCurrency(c.feesCharged) }}
+              </span>
+            </div>
+            <mat-icon class="dp-row-arrow">chevron_right</mat-icon>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Detail placeholder -->
+      <div class="detail-panel detail-panel--empty" *ngIf="!selectedClient">
+        <mat-icon>person_search</mat-icon>
+        <p>Select a client to view details</p>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

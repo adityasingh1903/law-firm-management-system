@@ -13,7 +13,8 @@ import java.util.List;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
-    /** Full conversation between two users on a specific case, oldest first */
+    // ── Existing (keep as-is) ─────────────────────────────────────────────────
+
     @Query("""
         SELECT m FROM Message m
         WHERE m.caseEntity.id = :caseId
@@ -28,7 +29,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
                                    @Param("userId")  Long userId,
                                    @Param("otherId") Long otherId);
 
-    /** All messages in a case thread (for both participants) */
     @Query("""
         SELECT m FROM Message m
         WHERE m.caseEntity.id = :caseId
@@ -36,10 +36,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     """)
     List<Message> findByCaseId(@Param("caseId") Long caseId);
 
-    /** Count unread messages for a receiver */
     long countBySenderIdAndReceiverIdAndIsReadFalse(Long senderId, Long receiverId);
 
-    /** Mark all messages in a conversation as read */
     @Modifying
     @Transactional
     @Query("""
@@ -49,7 +47,56 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
           AND m.receiver.id = :receiverId
           AND m.isRead = false
     """)
-    void markConversationAsRead(@Param("caseId")    Long caseId,
-                                @Param("senderId")  Long senderId,
+    void markConversationAsRead(@Param("caseId")     Long caseId,
+                                @Param("senderId")   Long senderId,
                                 @Param("receiverId") Long receiverId);
+
+    // ── New (needed for messages page) ────────────────────────────────────────
+
+    /**
+     * All distinct cases where this client has a conversation, newest message first.
+     * Used to build the conversation list on the left panel.
+     */
+    @Query("""
+        SELECT m FROM Message m
+        JOIN FETCH m.caseEntity c
+        JOIN FETCH m.sender
+        JOIN FETCH m.receiver
+        WHERE (m.sender.username = :username OR m.receiver.username = :username)
+        ORDER BY m.createdAt DESC
+    """)
+    List<Message> findAllInvolvingUsername(@Param("username") String username);
+
+    /**
+     * Latest message per case for the conversation list preview.
+     */
+    @Query("""
+        SELECT m FROM Message m
+        WHERE m.caseEntity.id = :caseId
+        ORDER BY m.createdAt DESC
+        LIMIT 1
+    """)
+    java.util.Optional<Message> findLatestByCaseId(@Param("caseId") Long caseId);
+
+    /**
+     * Total unread count for a receiver across ALL cases.
+     */
+    @Query("""
+        SELECT COUNT(m) FROM Message m
+        WHERE m.receiver.username = :username
+          AND m.isRead = false
+    """)
+    long countUnreadByReceiverUsername(@Param("username") String username);
+
+    /**
+     * Unread count for a specific case conversation.
+     */
+    @Query("""
+        SELECT COUNT(m) FROM Message m
+        WHERE m.caseEntity.id = :caseId
+          AND m.receiver.username = :username
+          AND m.isRead = false
+    """)
+    long countUnreadByCaseIdAndReceiverUsername(@Param("caseId")   Long caseId,
+                                                @Param("username") String username);
 }

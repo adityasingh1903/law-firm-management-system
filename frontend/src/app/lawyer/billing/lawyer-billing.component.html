@@ -1,0 +1,500 @@
+<div class="billing-wrapper">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="dash-header">
+    <div>
+      <span class="overline">Finance</span>
+      <h1>Billing &amp; <em>Invoices</em></h1>
+      <p class="dash-subtitle">Raise invoices, track payments and monitor your earnings.</p>
+    </div>
+    <button class="btn-gold" (click)="openCreateModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      New Invoice
+    </button>
+  </div>
+
+  <!-- ── Summary Cards ────────────────────────────────────────────────────── -->
+  <div class="summary-grid" *ngIf="!isLoadingSummary && summary">
+
+    <div class="stat-card" style="--delay:.05s">
+      <div class="stat-card-inner">
+        <div class="stat-top">
+          <span class="stat-label">Total Due</span>
+          <span class="stat-icon-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value">₹{{ summary.totalDue | number:'1.0-0' }}</div>
+        <div class="stat-sub">{{ summary.unpaidCount + summary.overdueCount + summary.partialCount }} open invoices</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--paid" style="--delay:.1s">
+      <div class="stat-card-inner">
+        <div class="stat-top">
+          <span class="stat-label">Total Collected</span>
+          <span class="stat-icon-wrap stat-icon-wrap--green">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value">₹{{ summary.totalPaid | number:'1.0-0' }}</div>
+        <div class="stat-sub">{{ summary.paidCount }} paid invoice{{ summary.paidCount !== 1 ? 's' : '' }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--overdue" style="--delay:.15s">
+      <div class="stat-card-inner">
+        <div class="stat-top">
+          <span class="stat-label">Overdue</span>
+          <span class="stat-icon-wrap stat-icon-wrap--red">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value">{{ summary.overdueCount }}</div>
+        <div class="stat-sub">past due date</div>
+      </div>
+    </div>
+
+    <div class="stat-card" style="--delay:.2s">
+      <div class="stat-card-inner">
+        <div class="stat-top">
+          <span class="stat-label">Partial</span>
+          <span class="stat-icon-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </span>
+        </div>
+        <div class="stat-value">{{ summary.partialCount }}</div>
+        <div class="stat-sub">partially paid</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Two-col: Chart + Invoices ────────────────────────────────────────── -->
+  <div class="two-col">
+
+    <!-- Monthly Earnings Chart -->
+    <div class="panel" style="--delay:.25s">
+      <div class="panel-head">
+        <div>
+          <span class="overline">{{ currentYear }} Earnings</span>
+          <h2 class="panel-title">Monthly Collections</h2>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-bars">
+          <div class="chart-bar-row" *ngFor="let d of monthlyData">
+            <span class="chart-month">{{ d.month }}</span>
+            <div class="chart-track">
+              <div class="chart-fill" [style.width.%]="getBarWidth(d.amount)"></div>
+            </div>
+            <span class="chart-amount" *ngIf="d.amount > 0">₹{{ d.amount | number:'1.0-0' }}</span>
+            <span class="chart-amount chart-amount--nil" *ngIf="d.amount === 0">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice list -->
+    <div class="panel panel--invoices" style="--delay:.3s">
+      <div class="panel-head">
+        <div>
+          <span class="overline">All Invoices</span>
+          <h2 class="panel-title">Invoice List</h2>
+        </div>
+        <div class="panel-head-right">
+          <div class="lf-select-wrap">
+            <select class="filter-select" [(ngModel)]="filterStatus" (change)="applyFilter()">
+              <option value="">All statuses</option>
+              <option *ngFor="let s of invoiceStatuses" [value]="s">{{ s.replace('_',' ') }}</option>
+            </select>
+            <svg class="sel-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <button class="btn-ghost-sm" *ngIf="filterStatus" (click)="clearFilter()">Clear</button>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoadingInvoices">
+        <span class="spinner-ring"></span>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoadingInvoices && filteredInvoices.length === 0">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <p>No invoices yet.</p>
+        <button class="btn-gold" (click)="openCreateModal()">Create First Invoice</button>
+      </div>
+
+      <div class="invoice-list" *ngIf="!isLoadingInvoices && filteredInvoices.length > 0">
+        <div class="invoice-row"
+             *ngFor="let inv of filteredInvoices"
+             [class.overdue-row]="isOverdue(inv)"
+             (click)="openDetail(inv)">
+
+          <div class="inv-left">
+            <span class="inv-number">{{ inv.invoiceNumber }}</span>
+            <span class="inv-title">{{ inv.title }}</span>
+            <span class="inv-client" *ngIf="inv.clientName">{{ inv.clientName }}</span>
+          </div>
+
+          <div class="inv-mid">
+            <span class="inv-type-badge">{{ getTypeLabel(inv.invoiceType) }}</span>
+            <span class="inv-due" [class.inv-due--overdue]="isOverdue(inv)">
+              Due {{ inv.dueDate | date:'d MMM yyyy' }}
+            </span>
+          </div>
+
+          <div class="inv-right">
+            <span class="inv-amount">₹{{ inv.totalAmount | number:'1.0-0' }}</span>
+            <span class="inv-balance" *ngIf="inv.balanceDue > 0 && inv.status === 'PARTIALLY_PAID'">
+              ₹{{ inv.balanceDue | number:'1.0-0' }} due
+            </span>
+            <span class="status-badge" [class]="getStatusClass(inv.status)">
+              {{ inv.status.replace('_',' ') }}
+            </span>
+          </div>
+
+          <div class="inv-actions" (click)="$event.stopPropagation()">
+            <button class="icon-btn" (click)="openStatusModal(inv, $event)" title="Update status">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn--danger"
+                    *ngIf="inv.status !== 'PAID'"
+                    (click)="deleteInvoice(inv, $event)" title="Delete">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     INVOICE DETAIL PANEL
+     ════════════════════════════════════════════════════════════════════════════ -->
+<div class="detail-backdrop" *ngIf="detailOpen" (click)="closeDetail()"></div>
+
+<div class="detail-panel" [class.open]="detailOpen">
+  <div class="detail-inner" *ngIf="selectedInvoice">
+
+    <div class="detail-head">
+      <div>
+        <span class="inv-number">{{ selectedInvoice.invoiceNumber }}</span>
+        <h2 class="detail-title">{{ selectedInvoice.title }}</h2>
+      </div>
+      <button class="detail-close" (click)="closeDetail()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="detail-scroll">
+
+      <div class="detail-badges">
+        <span class="status-badge" [class]="getStatusClass(selectedInvoice.status)">
+          {{ selectedInvoice.status.replace('_',' ') }}
+        </span>
+        <span class="inv-type-badge">{{ getTypeLabel(selectedInvoice.invoiceType) }}</span>
+        <button class="btn-ghost-sm" (click)="openStatusModal(selectedInvoice); closeDetail()">
+          Update Status
+        </button>
+      </div>
+
+      <div class="section-block">
+        <span class="section-label">Invoice Details</span>
+        <div class="detail-grid">
+          <div class="dg-row"><span class="dg-key">Case</span><span class="dg-val">{{ selectedInvoice.caseNumber }} — {{ selectedInvoice.caseTitle }}</span></div>
+          <div class="dg-row"><span class="dg-key">Client</span><span class="dg-val">{{ selectedInvoice.clientName }}</span></div>
+          <div class="dg-row"><span class="dg-key">Issue Date</span><span class="dg-val">{{ selectedInvoice.createdAt | date:'mediumDate' }}</span></div>
+          <div class="dg-row"><span class="dg-key">Due Date</span>
+            <span class="dg-val" [class.text-red]="isOverdue(selectedInvoice)">
+              {{ selectedInvoice.dueDate | date:'mediumDate' }}
+            </span>
+          </div>
+          <div class="dg-row" *ngIf="selectedInvoice.paidDate">
+            <span class="dg-key">Paid On</span>
+            <span class="dg-val text-green">{{ selectedInvoice.paidDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="dg-row" *ngIf="selectedInvoice.paymentMethod">
+            <span class="dg-key">Payment</span>
+            <span class="dg-val">{{ selectedInvoice.paymentMethod }}</span>
+          </div>
+          <div class="dg-row" *ngIf="selectedInvoice.paymentReference">
+            <span class="dg-key">Reference</span>
+            <span class="dg-val">{{ selectedInvoice.paymentReference }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block" *ngIf="selectedInvoice.description">
+        <span class="section-label">Description</span>
+        <p class="detail-notes">{{ selectedInvoice.description }}</p>
+      </div>
+
+      <!-- Amount breakdown -->
+      <div class="section-block">
+        <span class="section-label">Amount Breakdown</span>
+        <div class="totals-block">
+          <div class="totals-row">
+            <span>Base Amount</span>
+            <span>₹{{ selectedInvoice.amount | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals-row" *ngIf="selectedInvoice.taxAmount > 0">
+            <span>Tax</span>
+            <span>₹{{ selectedInvoice.taxAmount | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals-row totals-row--total">
+            <span>Total</span>
+            <span>₹{{ selectedInvoice.totalAmount | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals-row" *ngIf="selectedInvoice.paidAmount > 0">
+            <span>Paid</span>
+            <span class="text-green">₹{{ selectedInvoice.paidAmount | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals-row totals-row--balance" *ngIf="selectedInvoice.balanceDue > 0">
+            <span>Balance Due</span>
+            <span class="text-red">₹{{ selectedInvoice.balanceDue | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block" *ngIf="selectedInvoice.notes">
+        <span class="section-label">Notes</span>
+        <p class="detail-notes">{{ selectedInvoice.notes }}</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     CREATE INVOICE MODAL
+     ════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="createModalOpen" (click)="closeCreateModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <button class="modal-close" (click)="closeCreateModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="modal-heading">
+      <span class="overline">New Invoice</span>
+      <h3>Create Invoice</h3>
+      <p>Raise an invoice for your client. It will appear in their billing section.</p>
+    </div>
+
+    <form [formGroup]="createForm" (ngSubmit)="submitInvoice()" class="modal-form" novalidate>
+
+      <!-- Case -->
+      <div class="lf-field">
+        <label class="lf-label">Case *</label>
+        <div class="lf-input-wrap lf-select-wrap"
+             [class.has-error]="createForm.get('caseId')?.invalid && createForm.get('caseId')?.touched">
+          <select class="lf-input lf-select" formControlName="caseId">
+            <option value="" disabled>Select a case…</option>
+            <option *ngFor="let c of cases" [value]="c.id">{{ c.caseNumber }} — {{ c.title }}</option>
+          </select>
+          <svg class="select-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <span class="lf-error" *ngIf="createForm.get('caseId')?.hasError('required') && createForm.get('caseId')?.touched">Required</span>
+      </div>
+
+      <!-- Title -->
+      <div class="lf-field">
+        <label class="lf-label">Invoice Title *</label>
+        <div class="lf-input-wrap"
+             [class.has-error]="createForm.get('title')?.invalid && createForm.get('title')?.touched">
+          <input class="lf-input" type="text" formControlName="title"
+                 placeholder="e.g. Legal Fees — March 2026"/>
+        </div>
+        <span class="lf-error" *ngIf="createForm.get('title')?.hasError('required') && createForm.get('title')?.touched">Title required</span>
+      </div>
+
+      <!-- Type + Amount -->
+      <div class="field-row">
+        <div class="lf-field">
+          <label class="lf-label">Invoice Type *</label>
+          <div class="lf-input-wrap lf-select-wrap">
+            <select class="lf-input lf-select" formControlName="invoiceType">
+              <option *ngFor="let t of invoiceTypes" [value]="t">{{ getTypeLabel(t) }}</option>
+            </select>
+            <svg class="select-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="lf-field">
+          <label class="lf-label">Amount (₹) *</label>
+          <div class="lf-input-wrap"
+               [class.has-error]="createForm.get('amount')?.invalid && createForm.get('amount')?.touched">
+            <input class="lf-input" type="number" formControlName="amount"
+                   placeholder="e.g. 15000" min="1"/>
+          </div>
+          <span class="lf-error" *ngIf="createForm.get('amount')?.invalid && createForm.get('amount')?.touched">Valid amount required</span>
+        </div>
+      </div>
+
+      <!-- Tax + Due Date -->
+      <div class="field-row">
+        <div class="lf-field">
+          <label class="lf-label">Tax Amount (₹) <span class="lf-hint">(optional)</span></label>
+          <div class="lf-input-wrap">
+            <input class="lf-input" type="number" formControlName="taxAmount"
+                   placeholder="0" min="0"/>
+          </div>
+        </div>
+
+        <div class="lf-field">
+          <label class="lf-label">Due Date <span class="lf-hint">(default +30 days)</span></label>
+          <div class="lf-input-wrap">
+            <input class="lf-input" type="date" formControlName="dueDate"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="lf-field">
+        <label class="lf-label">Description <span class="lf-hint">(optional)</span></label>
+        <div class="lf-input-wrap">
+          <textarea class="lf-input lf-textarea" formControlName="description"
+                    rows="2" placeholder="Work done, services rendered…"></textarea>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="lf-field">
+        <label class="lf-label">Notes <span class="lf-hint">(optional)</span></label>
+        <div class="lf-input-wrap">
+          <textarea class="lf-input lf-textarea" formControlName="notes"
+                    rows="2" placeholder="Payment instructions, bank details…"></textarea>
+        </div>
+      </div>
+
+      <!-- Preview total -->
+      <div class="invoice-preview-total">
+        <span>Invoice Total</span>
+        <span class="preview-amount">₹{{ previewTotal | number:'1.0-0' }}</span>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-outline-sm" (click)="closeCreateModal()">Cancel</button>
+        <button type="submit" class="btn-gold" [disabled]="createForm.invalid || isSubmitting">
+          <span *ngIf="!isSubmitting">Create Invoice</span>
+          <span *ngIf="isSubmitting" class="btn-spinner">
+            <span class="spinner-ring spinner-ring--sm"></span> Creating…
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     UPDATE STATUS MODAL
+     ════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="statusModalOpen" (click)="closeStatusModal()">
+  <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+
+    <button class="modal-close" (click)="closeStatusModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="modal-heading">
+      <span class="overline">{{ updatingInvoice?.invoiceNumber }}</span>
+      <h3>Update Payment Status</h3>
+    </div>
+
+    <form [formGroup]="statusForm" (ngSubmit)="submitStatus()" class="modal-form" novalidate>
+
+      <div class="lf-field">
+        <label class="lf-label">Status *</label>
+        <div class="lf-input-wrap lf-select-wrap">
+          <select class="lf-input lf-select" formControlName="status">
+            <option *ngFor="let s of invoiceStatuses" [value]="s">{{ s.replace('_',' ') }}</option>
+          </select>
+          <svg class="select-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      <!-- Payment fields — show for PAID or PARTIALLY_PAID -->
+      <ng-container *ngIf="showPaidFields">
+        <div class="field-row">
+          <div class="lf-field">
+            <label class="lf-label">
+              Amount Paid (₹) <span *ngIf="requirePartialAmount" class="lf-required">*</span>
+            </label>
+            <div class="lf-input-wrap">
+              <input class="lf-input" type="number" formControlName="paidAmount"
+                     [placeholder]="updatingInvoice?.totalAmount"/>
+            </div>
+          </div>
+          <div class="lf-field">
+            <label class="lf-label">Payment Date</label>
+            <div class="lf-input-wrap">
+              <input class="lf-input" type="date" formControlName="paidDate"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="lf-field">
+            <label class="lf-label">Payment Method</label>
+            <div class="lf-input-wrap lf-select-wrap">
+              <select class="lf-input lf-select" formControlName="paymentMethod">
+                <option value="">Select…</option>
+                <option *ngFor="let m of paymentMethods" [value]="m">{{ m.replace('_',' ') }}</option>
+              </select>
+              <svg class="select-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="lf-field">
+            <label class="lf-label">Reference / UTR</label>
+            <div class="lf-input-wrap">
+              <input class="lf-input" type="text" formControlName="paymentReference"
+                     placeholder="e.g. UTR1234567890"/>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-outline-sm" (click)="closeStatusModal()">Cancel</button>
+        <button type="submit" class="btn-gold" [disabled]="statusForm.invalid || isUpdatingStatus">
+          <span *ngIf="!isUpdatingStatus">Update</span>
+          <span *ngIf="isUpdatingStatus" class="btn-spinner">
+            <span class="spinner-ring spinner-ring--sm"></span>
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

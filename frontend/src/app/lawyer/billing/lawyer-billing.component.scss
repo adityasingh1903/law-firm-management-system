@@ -1,0 +1,440 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// LexFirma — Lawyer Billing
+// ─────────────────────────────────────────────────────────────────────────────
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+$ink:       #0D0C0A; $ink-soft: #1A1916; $ink-mid: #252320; $ink-lift: #2E2C28;
+$parchment: #F5F0E8; $gold: #C9A84C; $gold-light: #E2C47A;
+$muted:     #7A7469; $muted-light: #ABA49A;
+$border:    rgba(201,168,76,.13); $border-soft: rgba(201,168,76,.07);
+$green:     #4EB87A; $red: #d46060; $error: #b83232; $error-bg: rgba(184,50,50,.06);
+$ease: cubic-bezier(.4,0,.2,1); $ease-out: cubic-bezier(0,0,.2,1);
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.billing-wrapper {
+  min-height: 100vh; background: $ink; color: $parchment;
+  font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased;
+  padding: 2.5rem 2.5rem 4rem; max-width: 1400px; margin: 0 auto;
+}
+
+.overline {
+  display: block; font-size: .68rem; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: $gold; margin-bottom: .5rem; opacity: .8;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.dash-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid $border-soft;
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem,3.5vw,2.8rem);
+       font-weight: 700; line-height: 1.1; color: $parchment; margin: 0 0 .4rem;
+       em { font-style: italic; color: $gold; } }
+  .dash-subtitle { font-size: .875rem; color: $muted; margin: 0; }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn-gold {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: $gold; color: $ink; font-family: 'DM Sans', sans-serif;
+  font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  padding: .65rem 1.4rem; border-radius: 3px; border: none; cursor: pointer;
+  transition: background .25s $ease, transform .2s $ease, box-shadow .25s $ease;
+  &:hover:not(:disabled) { background: $gold-light; transform: translateY(-1px); box-shadow: 0 6px 20px rgba($gold,.3); }
+  &:disabled { opacity: .45; cursor: not-allowed; }
+}
+
+.btn-ghost-sm {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: transparent; border: 1px solid rgba($parchment,.12); border-radius: 3px;
+  color: $muted-light; font-family: 'DM Sans', sans-serif; font-size: .78rem;
+  font-weight: 500; padding: .45rem .875rem; cursor: pointer;
+  transition: border-color .2s $ease, color .2s $ease;
+  &:hover { border-color: rgba($parchment,.3); color: $parchment; }
+}
+
+.btn-outline-sm {
+  display: inline-flex; align-items: center; background: transparent;
+  border: 1px solid rgba($parchment,.15); border-radius: 3px;
+  color: $muted-light; font-family: 'DM Sans', sans-serif; font-size: .83rem;
+  font-weight: 500; padding: .65rem 1.25rem; cursor: pointer;
+  &:hover { border-color: rgba($parchment,.3); color: $parchment; }
+}
+
+.btn-spinner { display: inline-flex; align-items: center; gap: .5rem; }
+
+// ── Summary cards ─────────────────────────────────────────────────────────────
+.summary-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1px; background: $border; border: 1px solid $border;
+  border-radius: 6px; overflow: hidden; margin-bottom: 1.75rem;
+}
+
+.stat-card {
+  background: $ink-soft; padding: 1.5rem 1.375rem; position: relative; overflow: hidden;
+  animation: fadeUp .6s $ease-out both; animation-delay: var(--delay,0s);
+  transition: background .25s $ease;
+  &::after { content:''; position:absolute; bottom:0; left:0; width:0; height:2px;
+    background:$gold; transition: width .35s $ease; }
+  &:hover { background: $ink-lift; &::after { width:100%; } }
+  &--paid    { &:hover::after { background: $green; } }
+  &--overdue { &:hover::after { background: $red; } }
+}
+
+.stat-card-inner { display: flex; flex-direction: column; gap: .6rem; }
+.stat-top        { display: flex; align-items: center; justify-content: space-between; }
+
+.stat-label {
+  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: $muted;
+}
+
+.stat-icon-wrap {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba($gold,.08); border: 1px solid rgba($gold,.15);
+  display: flex; align-items: center; justify-content: center; color: $gold;
+  &--green { background: rgba($green,.08); border-color: rgba($green,.2); color: $green; }
+  &--red   { background: rgba($red,.08);   border-color: rgba($red,.2);   color: $red;   }
+}
+
+.stat-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem; font-weight: 700; color: $parchment; line-height: 1;
+}
+
+.stat-sub { font-size: .75rem; color: $muted; }
+
+// ── Two-col ───────────────────────────────────────────────────────────────────
+.two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1.75rem; }
+
+// ── Panel ─────────────────────────────────────────────────────────────────────
+.panel {
+  background: $ink-soft; border: 1px solid $border; border-radius: 6px; overflow: hidden;
+  animation: fadeUp .6s $ease-out both; animation-delay: var(--delay,0s);
+}
+
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.375rem 1.75rem; border-bottom: 1px solid $border-soft; position: relative;
+  &::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:40%; background:$gold; border-radius:0 2px 2px 0;
+  }
+}
+
+.panel-head-right { display: flex; align-items: center; gap: .625rem; }
+
+.panel-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700;
+  color: $parchment; margin: 0;
+}
+
+.panel-body { padding: 1.5rem 1.75rem; }
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+.lf-select-wrap { position: relative; display: flex; align-items: center; }
+
+.filter-select {
+  padding: .5rem 2rem .5rem .75rem; background: $ink-mid;
+  border: 1px solid $border; border-radius: 3px; color: $parchment;
+  font-family: 'DM Sans', sans-serif; font-size: .8rem; appearance: none;
+  option { background: $ink-mid; }
+  &:focus { outline: none; border-color: $gold; }
+}
+
+.sel-arrow { position: absolute; right: .6rem; pointer-events: none; color: $muted; }
+
+// ── Monthly chart ─────────────────────────────────────────────────────────────
+.chart-bars  { display: flex; flex-direction: column; gap: .5rem; }
+
+.chart-bar-row { display: flex; align-items: center; gap: .625rem; }
+
+.chart-month {
+  font-size: .7rem; font-weight: 600; color: $muted;
+  width: 26px; flex-shrink: 0; text-align: right;
+}
+
+.chart-track {
+  flex: 1; height: 8px; background: rgba($parchment,.06); border-radius: 4px; overflow: hidden;
+}
+
+.chart-fill { height: 100%; background: $gold; border-radius: 4px; transition: width .9s $ease-out; }
+
+.chart-amount {
+  font-size: .7rem; font-weight: 600; color: $gold; min-width: 72px; text-align: right;
+  &--nil { color: $muted; }
+}
+
+// ── Invoice list ──────────────────────────────────────────────────────────────
+.invoice-list { display: flex; flex-direction: column; }
+
+.invoice-row {
+  display: flex; align-items: center; gap: .875rem;
+  padding: .875rem 1.5rem; border-bottom: 1px solid $border-soft;
+  cursor: pointer; transition: background .15s $ease;
+  &:hover { background: rgba($gold,.04); }
+  &:last-child { border-bottom: none; }
+  &.overdue-row { border-left: 3px solid $red; padding-left: calc(1.5rem - 3px); }
+}
+
+.inv-left  { display: flex; flex-direction: column; gap: .2rem; min-width: 140px; }
+.inv-number { font-family: 'Cormorant Garamond', serif; font-size: .9rem; font-weight: 700; color: $gold; }
+.inv-title  { font-size: .82rem; font-weight: 600; color: $parchment; line-height: 1.25; }
+.inv-client { font-size: .72rem; color: $muted; }
+
+.inv-mid    { display: flex; flex-direction: column; gap: .25rem; flex: 1; }
+.inv-due    { font-size: .72rem; color: $muted;
+  &--overdue { color: $red; font-weight: 600; }
+}
+
+.inv-right  { display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; flex-shrink: 0; }
+.inv-amount { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 700; color: $parchment; }
+.inv-balance { font-size: .72rem; color: $red; }
+
+// ── Type badge ────────────────────────────────────────────────────────────────
+.inv-type-badge {
+  display: inline-flex; padding: .18rem .55rem; border-radius: 3px;
+  font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  background: rgba($gold,.08); color: $gold-light; border: 1px solid rgba($gold,.18);
+}
+
+// ── Status badges ─────────────────────────────────────────────────────────────
+.status-badge {
+  display: inline-flex; padding: .2rem .6rem; border-radius: 3px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  border: 1px solid transparent;
+  &.inv--unpaid    { background: rgba($gold,.1);          color: $gold;       border-color: rgba($gold,.2); }
+  &.inv--partial   { background: rgba(#6FA3D4,.1);        color: #6FA3D4;     border-color: rgba(#6FA3D4,.2); }
+  &.inv--paid      { background: rgba($green,.1);         color: $green;      border-color: rgba($green,.2); }
+  &.inv--overdue   { background: rgba($red,.1);           color: $red;        border-color: rgba($red,.2); }
+  &.inv--cancelled { background: rgba($muted,.1);         color: $muted;      border-color: rgba($muted,.2); }
+  &.inv--waived    { background: rgba(#b09ddd,.1);        color: #b09ddd;     border-color: rgba(#b09ddd,.2); }
+}
+
+// ── Row actions ───────────────────────────────────────────────────────────────
+.inv-actions { display: flex; gap: .375rem; flex-shrink: 0; }
+
+.icon-btn {
+  width: 28px; height: 28px; border-radius: 3px;
+  background: rgba($parchment,.05); border: 1px solid rgba($parchment,.08);
+  color: $muted-light; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s $ease, color .2s $ease;
+  &:hover { background: rgba($gold,.1); color: $gold; }
+  &--danger { &:hover { background: rgba($error,.08); color: $red; } }
+}
+
+// ── Loading / Empty ───────────────────────────────────────────────────────────
+.loading-state {
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem; font-size: .875rem; color: $muted;
+}
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1rem; padding: 4rem 2rem; text-align: center;
+  svg { opacity: .25; color: $muted; }
+  p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.05rem; color: $muted; margin: 0; }
+}
+
+.spinner-ring {
+  border-radius: 50%; border: 2px solid rgba($parchment,.1); border-top-color: $gold;
+  animation: spin .7s linear infinite; width: 22px; height: 22px;
+  &--sm { width: 15px; height: 15px; border-top-color: $ink; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Detail Panel
+// ─────────────────────────────────────────────────────────────────────────────
+.detail-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba($ink,.5); backdrop-filter: blur(3px);
+  animation: backdropIn .2s $ease-out both;
+}
+
+.detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 600;
+  width: 460px; max-width: 100vw;
+  background: $ink-soft; border-left: 1px solid $border;
+  box-shadow: -16px 0 48px rgba($ink,.4);
+  transform: translateX(100%); transition: transform .35s $ease;
+  display: flex; flex-direction: column;
+  &.open { transform: translateX(0); }
+}
+
+.detail-inner { display: flex; flex-direction: column; height: 100%; }
+
+.detail-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid $border-soft; flex-shrink: 0;
+}
+
+.detail-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 700;
+  color: $parchment; margin: .3rem 0 0; line-height: 1.2;
+}
+
+.detail-close {
+  width: 30px; height: 30px; border-radius: 3px;
+  background: rgba($parchment,.05); border: 1px solid rgba($parchment,.08);
+  color: $muted; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s $ease; &:hover { background: rgba($error,.08); color: $red; }
+}
+
+.detail-scroll {
+  flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem;
+  scrollbar-width: thin; scrollbar-color: rgba($gold,.15) transparent;
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: rgba($gold,.15); border-radius: 2px; }
+}
+
+.detail-badges { display: flex; gap: .5rem; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+
+.section-block { margin-bottom: 1.75rem; }
+
+.section-label {
+  display: block; font-size: .65rem; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: $gold; opacity: .75; margin-bottom: .75rem;
+}
+
+.detail-grid { display: flex; flex-direction: column; gap: .6rem; }
+.dg-row      { display: flex; gap: .75rem; }
+.dg-key      { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing:.08em;
+               color: $muted; min-width: 110px; flex-shrink: 0; }
+.dg-val      { font-size: .875rem; color: $parchment; }
+.text-red    { color: $red !important; }
+.text-green  { color: $green !important; }
+
+// ── Totals ────────────────────────────────────────────────────────────────────
+.totals-block { display: flex; flex-direction: column; gap: .5rem; }
+
+.totals-row {
+  display: flex; justify-content: space-between;
+  font-size: .875rem; color: $muted-light; padding: .4rem 0;
+  border-bottom: 1px solid $border-soft;
+  &:last-child { border-bottom: none; }
+  &--total {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 700;
+    color: $parchment; padding-top: .75rem; margin-top: .25rem;
+    border-top: 2px solid rgba($gold,.2); border-bottom: none;
+  }
+  &--balance {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 700;
+    color: $red; border-bottom: none;
+  }
+}
+
+.detail-notes { font-size: .875rem; color: $muted; line-height: 1.65; margin: 0; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modals
+// ─────────────────────────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba($ink,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem; overflow-y: auto;
+  animation: backdropIn .2s $ease-out both;
+}
+
+.modal-card {
+  position: relative; width: 100%; max-width: 560px;
+  background: $ink-soft; border: 1px solid $border; border-radius: 6px;
+  padding: 2.25rem 2rem 2rem;
+  box-shadow: 0 32px 80px rgba($ink,.5), 0 0 0 1px rgba($gold,.06);
+  animation: modalIn .3s $ease-out both; margin: auto;
+  &::before {
+    content:''; position:absolute; top:0; left:2rem; right:2rem; height:2px;
+    background: linear-gradient(to right, transparent, $gold, transparent);
+  }
+  &--sm { max-width: 440px; }
+}
+
+.modal-close {
+  position: absolute; top: 1rem; right: 1rem;
+  width: 28px; height: 28px; background: rgba($parchment,.05);
+  border: 1px solid rgba($parchment,.08); border-radius: 3px;
+  color: $muted; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  &:hover { background: rgba($error,.08); color: $red; }
+}
+
+.modal-heading {
+  margin-bottom: 1.75rem;
+  h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 700; color: $parchment; margin: 0 0 .5rem; }
+  p  { font-size: .875rem; color: $muted; line-height: 1.65; margin: 0; }
+}
+
+.modal-form { display: flex; flex-direction: column; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.lf-field { display: flex; flex-direction: column; margin-bottom: 1rem; }
+
+.lf-label {
+  font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: $muted; margin-bottom: .4rem;
+}
+
+.lf-hint     { font-weight: 400; opacity: .7; text-transform: none; letter-spacing: 0; }
+.lf-required { color: $red; }
+
+.lf-input-wrap {
+  position: relative; display: flex; align-items: center;
+  &.has-error .lf-input { border-color: rgba($error,.45); background: $error-bg; }
+}
+
+.lf-input {
+  width: 100%; padding: .7rem 1rem; background: $ink-mid;
+  border: 1px solid rgba($parchment,.1); border-radius: 3px;
+  color: $parchment; font-family: 'DM Sans', sans-serif; font-size: .875rem;
+  appearance: none;
+  transition: border-color .2s $ease, box-shadow .2s $ease;
+  &::placeholder { color: $muted; }
+  &:focus { outline: none; border-color: $gold; box-shadow: 0 0 0 3px rgba($gold,.1); }
+  option { background: $ink-mid; }
+}
+
+.lf-textarea { resize: vertical; min-height: 70px; padding: .7rem 1rem; line-height: 1.55; }
+.lf-select   { cursor: pointer; padding-right: 2.25rem; }
+.select-arrow { position: absolute; right: .8rem; pointer-events: none; color: $muted; }
+.lf-error { font-size: .7rem; color: $red; margin-top: .3rem; }
+
+// ── Preview total ─────────────────────────────────────────────────────────────
+.invoice-preview-total {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba($gold,.06); border: 1px solid rgba($gold,.15);
+  border-left: 3px solid $gold; border-radius: 3px;
+  padding: .875rem 1rem; margin-bottom: 1.25rem;
+  font-size: .875rem; color: $muted;
+}
+
+.preview-amount {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: $gold;
+}
+
+.modal-actions {
+  display: flex; align-items: center; justify-content: flex-end; gap: .75rem;
+  margin-top: .5rem; padding-top: 1.25rem; border-top: 1px solid $border-soft;
+}
+
+// ── Keyframes ─────────────────────────────────────────────────────────────────
+@keyframes fadeUp    { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+@keyframes backdropIn{ from { opacity:0; } to { opacity:1; } }
+@keyframes modalIn   { from { opacity:0; transform:translateY(16px) scale(.98); } to { opacity:1; transform:none; } }
+@keyframes spin      { to { transform:rotate(360deg); } }
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .billing-wrapper { padding: 1.5rem 1rem 3rem; }
+  .dash-header { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+  .summary-grid { grid-template-columns: repeat(2,1fr); }
+  .detail-panel { width: 100%; }
+}
+@media (max-width: 600px) {
+  .summary-grid { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+}

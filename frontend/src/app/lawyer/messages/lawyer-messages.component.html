@@ -1,0 +1,222 @@
+<!-- src/app/lawyer/messages/lawyer-messages.component.html -->
+
+<div class="messages-page">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Left panel — conversation list
+  ══════════════════════════════════════════════════════════════════════ -->
+  <aside class="conv-panel">
+
+    <div class="conv-header">
+      <h2 class="conv-title">Messages</h2>
+      <div class="conv-header-actions">
+        <span class="conv-unread-badge" *ngIf="totalUnread() > 0">
+          {{ totalUnread() > 99 ? '99+' : totalUnread() }}
+        </span>
+        <!-- ── NEW: Start conversation button ── -->
+        <button class="btn-new-conv" (click)="startNewConversation()"
+                title="Start new conversation" *ngIf="allCasesForNewConv.length > 0">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="state-loading" *ngIf="loadingList">
+      <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+    </div>
+
+    <!-- Error -->
+    <div class="state-error-sm" *ngIf="errorList">
+      <mat-icon>error_outline</mat-icon> {{ errorList }}
+    </div>
+
+    <!-- Empty -->
+    <div class="state-empty-sm"
+         *ngIf="!loadingList && !errorList && conversations.length === 0">
+      <mat-icon>forum</mat-icon>
+      <p>No conversations yet.</p>
+      <button class="btn-start-first" (click)="startNewConversation()"
+              *ngIf="allCasesForNewConv.length > 0">
+        <mat-icon>add_comment</mat-icon> Start a conversation
+      </button>
+    </div>
+
+    <!-- Conversation rows -->
+    <div class="conv-list">
+      <div class="conv-row"
+           *ngFor="let conv of conversations"
+           [class.conv-row--active]="activeConv?.caseId === conv.caseId"
+           [class.conv-row--unread]="conv.unreadCount > 0"
+           (click)="selectConversation(conv)">
+
+        <div class="conv-avatar">{{ getInitials(conv.lawyerName) }}</div>
+
+        <div class="conv-info">
+          <div class="conv-name-row">
+            <span class="conv-lawyer">{{ conv.lawyerName }}</span>
+            <span class="conv-time">{{ formatTime(conv.lastMessageAt) }}</span>
+          </div>
+          <div class="conv-case">
+            <mat-icon class="conv-case-icon">gavel</mat-icon>
+            {{ conv.caseTitle }}
+            <span class="case-num" *ngIf="conv.caseNumber">&nbsp;#{{ conv.caseNumber }}</span>
+          </div>
+          <div class="conv-preview">
+            <span class="preview-me" *ngIf="conv.lastMessageIsFromMe">You: </span>
+            <span class="preview-icon" *ngIf="conv.lastMessageType === 'FILE'">
+              <mat-icon>attach_file</mat-icon>
+            </span>
+            <span class="preview-text">{{ conv.lastMessage || 'No messages yet' }}</span>
+          </div>
+        </div>
+
+        <div class="conv-unread-dot" *ngIf="conv.unreadCount > 0">
+          {{ conv.unreadCount > 9 ? '9+' : conv.unreadCount }}
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Right panel
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="chat-panel">
+
+    <!-- ── NEW CONVERSATION PANEL ─────────────────────────────────────── -->
+    <div class="new-conv-panel" *ngIf="showNewConv">
+      <div class="ncp-inner">
+        <mat-icon class="ncp-icon">add_comment</mat-icon>
+        <h3 class="ncp-title">Start a Conversation</h3>
+        <p class="ncp-sub">Select a case to message the client.</p>
+
+        <select class="ncp-select" [(ngModel)]="selectedCaseId">
+          <option [ngValue]="null" disabled>Choose a case…</option>
+          <option *ngFor="let c of allCasesForNewConv" [ngValue]="c.id">
+            #{{ c.caseNumber }} — {{ c.title }}
+            <span *ngIf="c.clientName"> ({{ c.clientName }})</span>
+          </option>
+        </select>
+
+        <div class="ncp-actions">
+          <button class="btn-ncp-cancel" (click)="showNewConv = false">Cancel</button>
+          <button class="btn-ncp-go" (click)="confirmNewConversation()"
+                  [disabled]="!selectedCaseId">
+            <mat-icon>chat</mat-icon> Open Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No conversation selected -->
+    <div class="chat-empty" *ngIf="!activeConv && !showNewConv">
+      <mat-icon>chat_bubble_outline</mat-icon>
+      <p>Select a conversation to start messaging</p>
+      <button class="btn-empty-new" (click)="startNewConversation()"
+              *ngIf="allCasesForNewConv.length > 0">
+        <mat-icon>add_comment</mat-icon> Message a Client
+      </button>
+    </div>
+
+    <ng-container *ngIf="activeConv && !showNewConv">
+
+      <!-- Chat header -->
+      <div class="chat-header">
+        <div class="chat-header-avatar">{{ getInitials(otherPartyName) }}</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">{{ otherPartyName }}</div>
+          <div class="chat-header-case">
+            {{ activeConv.caseTitle }}
+            <span class="case-num" *ngIf="activeConv.caseNumber">
+              &nbsp;· #{{ activeConv.caseNumber }}
+            </span>
+          </div>
+        </div>
+        <div class="header-unread" *ngIf="activeConv.unreadCount > 0">
+          <mat-icon>mark_chat_unread</mat-icon>
+          {{ activeConv.unreadCount }} unread
+        </div>
+      </div>
+
+      <!-- Thread loading -->
+      <div class="thread-loading" *ngIf="loadingThread">
+        <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+      </div>
+
+      <!-- Thread error -->
+      <div class="state-error-sm thread-error" *ngIf="errorThread">
+        <mat-icon>error_outline</mat-icon> {{ errorThread }}
+      </div>
+
+      <!-- Messages scroll area -->
+      <div class="chat-body" #chatScroll *ngIf="!loadingThread && !errorThread">
+
+        <div class="thread-empty" *ngIf="messages.length === 0">
+          <mat-icon>chat</mat-icon>
+          <p>No messages yet.</p>
+          <span class="thread-empty-hint">Send the first message below.</span>
+        </div>
+
+        <ng-container *ngFor="let group of messageGroups">
+          <div class="date-divider">
+            <span class="date-divider-label">{{ group.date }}</span>
+          </div>
+
+          <div *ngFor="let msg of group.messages"
+               class="msg-row"
+               [class.msg-row--mine]="isMyMessage(msg)"
+               [class.msg-row--theirs]="!isMyMessage(msg)">
+
+            <div class="msg-avatar" *ngIf="!isMyMessage(msg)">
+              {{ getInitials(msg.senderName) }}
+            </div>
+
+            <div class="msg-bubble-wrap">
+              <div class="msg-bubble">
+                <div class="msg-attachment"
+                     *ngIf="msg.type === 'FILE' && msg.attachmentUrl">
+                  <mat-icon>attach_file</mat-icon>
+                  <a [href]="msg.attachmentUrl" target="_blank">View attachment</a>
+                </div>
+                <p class="msg-text" *ngIf="msg.content">{{ msg.content }}</p>
+              </div>
+              <div class="msg-meta">
+                <span class="msg-time">{{ formatTimeShort(msg.createdAt) }}</span>
+                <mat-icon class="msg-read-icon" *ngIf="isMyMessage(msg)">
+                  {{ msg.isRead ? 'done_all' : 'done' }}
+                </mat-icon>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+
+      <!-- Compose area -->
+      <div class="compose-area">
+        <div class="compose-error" *ngIf="sendError">
+          <mat-icon>error_outline</mat-icon> {{ sendError }}
+        </div>
+        <div class="compose-box">
+          <textarea
+            class="compose-input"
+            placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
+            [(ngModel)]="composeText"
+            (keydown)="onKeyDown($event)"
+            [disabled]="sending"
+            rows="1"></textarea>
+          <button class="send-btn"
+                  (click)="send()"
+                  [disabled]="!composeText.trim() || sending">
+            <mat-progress-spinner *ngIf="sending"
+              mode="indeterminate" diameter="18"></mat-progress-spinner>
+            <mat-icon *ngIf="!sending">send</mat-icon>
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+  </div>
+
+</div>
